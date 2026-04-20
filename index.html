@@ -180,24 +180,64 @@ details[open] summary::before { content: "▼ "; }
 
 <!-- STATS -->
 <div id="tab-stats" class="tab">
-  <div id="lbSection" style="display:none">
+
+  <!-- Sub-tab pill toggle -->
+  <div style="display:flex; gap:2px; background:var(--surface); border-radius:10px; padding:3px; margin-bottom:12px">
+    <button id="stab-games" class="btn btn-sm" style="flex:1;border-radius:8px;background:var(--surface2);color:var(--text);border:none" onclick="switchStab('games')">Games</button>
+    <button id="stab-season" class="btn btn-sm" style="flex:1;border-radius:8px;background:transparent;color:var(--muted);border:none" onclick="switchStab('season')">Season stats</button>
+  </div>
+
+  <!-- GAMES VIEW -->
+  <div id="stab-games-view">
     <div class="card">
-      <div class="lbl">⚽ Top scorers</div>
-      <div id="lbGoals"></div>
+      <div class="lbl" style="color:var(--yellow)">Upcoming</div>
+      <div id="gamesUpcoming"><p style="color:var(--muted);font-size:14px">No upcoming games.</p></div>
     </div>
     <div class="card">
-      <div class="lbl">🎯 Top assists</div>
-      <div id="lbAssists"></div>
-    </div>
-    <div class="card">
-      <div class="lbl">🏆 Win / Loss</div>
-      <div id="lbWins"></div>
+      <div class="lbl" style="color:var(--green)">Played</div>
+      <div id="gamesPlayed"><p style="color:var(--muted);font-size:14px">No played games yet.</p></div>
     </div>
   </div>
-  <div class="card">
-    <div class="lbl">Games</div>
-    <div id="gamesList"><p style="color:var(--muted); font-size:14px">No games yet. Lock a team to get started.</p></div>
+
+  <!-- SEASON STATS VIEW -->
+  <div id="stab-season-view" style="display:none">
+    <div id="lbSection" style="display:none">
+      <div class="card" style="background:var(--surface2)">
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px">Season stats</div>
+        <div id="statsRange" style="font-size:12px;color:var(--muted);margin-bottom:14px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="background:var(--surface);border-radius:10px;padding:10px;text-align:center">
+            <div id="statGames" style="font-size:22px;font-weight:700;color:var(--green)">0</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Played</div>
+          </div>
+          <div style="background:var(--surface);border-radius:10px;padding:10px;text-align:center">
+            <div id="statGoals" style="font-size:22px;font-weight:700;color:var(--green)">0</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Goals</div>
+          </div>
+          <div style="background:var(--surface);border-radius:10px;padding:10px;text-align:center">
+            <div id="statPlayers" style="font-size:22px;font-weight:700;color:var(--green)">0</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Players</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="lbl">⚽ Top scorers</div>
+        <div id="lbGoals"></div>
+      </div>
+      <div class="card">
+        <div class="lbl">🎯 Top assists</div>
+        <div id="lbAssists"></div>
+      </div>
+      <div class="card">
+        <div class="lbl">🏆 Win / Loss</div>
+        <div id="lbWins"></div>
+      </div>
+    </div>
+    <div id="lbEmpty" style="display:none">
+      <p style="color:var(--muted);font-size:14px;padding:8px 0">Record game results to see season stats.</p>
+    </div>
   </div>
+
 </div>
 
 <!-- SHARE MODAL -->
@@ -508,37 +548,53 @@ $("lockBtn").addEventListener("click", () => {
 });
 
 // ── STATS ─────────────────────────────────────────────────────
-function renderStats() {
-  const games=getGames();
-  const list=$("gamesList");
+let currentStab = "games";
 
-  if (!games.length) {
-    list.innerHTML=`<p style="color:var(--muted);font-size:14px">No games yet. Lock a team to get started.</p>`;
-    $("lbSection").style.display="none";
-    return;
-  }
+function switchStab(name) {
+  currentStab = name;
+  $("stab-games-view").style.display  = name === "games"  ? "" : "none";
+  $("stab-season-view").style.display = name === "season" ? "" : "none";
+  $("stab-games").style.background  = name === "games"  ? "var(--surface2)" : "transparent";
+  $("stab-games").style.color       = name === "games"  ? "var(--text)"    : "var(--muted)";
+  $("stab-season").style.background = name === "season" ? "var(--surface2)" : "transparent";
+  $("stab-season").style.color      = name === "season" ? "var(--text)"    : "var(--muted)";
+}
 
-  list.innerHTML=games.map(g=>{
-    const played=g.result!==null;
-    const scoreStr=played?`${g.result.scoreA} – ${g.result.scoreB}`:"vs";
-    return `<div class="game-card" id="gc-${g.id}">
-      <div class="game-header" onclick="toggleGame('${g.id}')">
-        <div style="flex:1">
-          <div class="game-score">Team A ${scoreStr} Team B</div>
-          <div class="game-date">${fmtDate(g.date)}</div>
-        </div>
-        <span class="badge ${played?"badge-green":"badge-yellow"}">${played?"Played":"Upcoming"}</span>
-        <span style="color:var(--muted);margin-left:4px">›</span>
+function gameCard(g) {
+  const played = g.result !== null;
+  const scoreStr = played ? `${g.result.scoreA} – ${g.result.scoreB}` : "vs";
+  return `<div class="game-card" id="gc-${g.id}">
+    <div class="game-header" onclick="toggleGame('${g.id}')">
+      <div style="flex:1">
+        <div class="game-score">Team A ${scoreStr} Team B</div>
+        <div class="game-date">${fmtDate(g.date)}</div>
       </div>
-      <div class="game-body" id="gb-${g.id}">${renderGameBody(g)}</div>
-    </div>`;
-  }).join("");
+      <span style="color:var(--muted);margin-left:4px">›</span>
+    </div>
+    <div class="game-body" id="gb-${g.id}">${renderGameBody(g)}</div>
+  </div>`;
+}
 
-  // Leaderboard
+function renderStats() {
+  const games = getGames();
+
+  // Split into upcoming vs played (upcoming = no result yet, sort by date asc; played = has result, sort by date desc)
+  const today = new Date().toISOString().slice(0,10);
+  const upcoming = games.filter(g => !g.result).sort((a,b) => a.date.localeCompare(b.date));
+  const played   = games.filter(g =>  g.result).sort((a,b) => b.date.localeCompare(a.date));
+
+  $("gamesUpcoming").innerHTML = upcoming.length
+    ? upcoming.map(gameCard).join("")
+    : `<p style="color:var(--muted);font-size:14px">No upcoming games.</p>`;
+
+  $("gamesPlayed").innerHTML = played.length
+    ? played.map(gameCard).join("")
+    : `<p style="color:var(--muted);font-size:14px">No played games yet.</p>`;
+
+  // Season stats leaderboard
   const stats={};
   const ensure=p=>{ if(!stats[p]) stats[p]={goals:0,assists:0,wins:0,losses:0}; };
-  for (const g of games) {
-    if (!g.result) continue;
+  for (const g of played) {
     const winner=g.result.scoreA>g.result.scoreB?"A":g.result.scoreB>g.result.scoreA?"B":null;
     [...g.teamA,...g.teamB].forEach(p=>{
       ensure(p);
@@ -551,9 +607,23 @@ function renderStats() {
       if (ev.assist) { ensure(ev.assist); stats[ev.assist].assists++; }
     });
   }
-  const entries=Object.entries(stats);
-  if (!entries.length) { $("lbSection").style.display="none"; return; }
+
+  if (!played.length) {
+    $("lbSection").style.display="none";
+    $("lbEmpty").style.display="";
+    return;
+  }
   $("lbSection").style.display="";
+  $("lbEmpty").style.display="none";
+
+  const allDates=games.map(g=>g.date).sort();
+  const first=fmtDate(allDates[0]), last=fmtDate(allDates[allDates.length-1]);
+  $("statsRange").textContent = allDates.length>1 ? `${first} – ${last}` : first;
+  $("statGames").textContent  = played.length;
+  $("statGoals").textContent  = played.reduce((s,g)=>(g.result?.goals?.length||0)+s, 0);
+  $("statPlayers").textContent = new Set(games.flatMap(g=>[...g.teamA,...g.teamB])).size;
+
+  const entries=Object.entries(stats);
   const lbRow=([name,s],i,key)=>`<div class="lb-row"><div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-val">${key==="wl"?`${s.wins}W–${s.losses}L`:s[key]}</div></div>`;
   $("lbGoals").innerHTML=[...entries].filter(([,s])=>s.goals>0).sort((a,b)=>b[1].goals-a[1].goals).map((e,i)=>lbRow(e,i,"goals")).join("")||`<p style="color:var(--muted);font-size:13px">No goals yet.</p>`;
   $("lbAssists").innerHTML=[...entries].filter(([,s])=>s.assists>0).sort((a,b)=>b[1].assists-a[1].assists).map((e,i)=>lbRow(e,i,"assists")).join("")||`<p style="color:var(--muted);font-size:13px">No assists yet.</p>`;
@@ -570,6 +640,10 @@ function renderGameBody(g) {
     </div>`).join("")||`<p style="color:var(--muted);font-size:13px;padding:4px 0">No goals recorded.</p>`;
 
   return `<div style="padding-top:12px">
+    <div class="lbl">Game date</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
+      <input type="date" id="gdate-${g.id}" value="${g.date}" style="flex:1" onchange="saveGameDate('${g.id}')" />
+    </div>
     <div class="lbl">Teams</div>
     <div class="row" style="margin-bottom:14px;font-size:13px">
       <div>
@@ -644,6 +718,18 @@ function addPlayer(id,team) {
   const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
   if(team==="A") g.teamA.push(name); else g.teamB.push(name);
   inp.value=""; saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+}
+
+function saveGameDate(id) {
+  const val = $(`gdate-${id}`).value;
+  if (!val) return;
+  const games = getGames(), g = games.find(x => x.id === id);
+  if (!g) return;
+  g.date = val;
+  saveGames(games);
+  // Update the date shown in the card header without re-rendering everything.
+  const header = document.querySelector(`#gc-${id} .game-date`);
+  if (header) header.textContent = fmtDate(val);
 }
 
 function deleteGame(id) {
