@@ -1,0 +1,47 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <defs>
+    <linearGradient id="ring-outer" x1="25%" y1="5%" x2="75%" y2="95%">
+      <stop offset="0%"   stop-color="#f0f0f0"/>
+      <stop offset="25%"  stop-color="#c8c8c8"/>
+      <stop offset="55%"  stop-color="#a0a0a0"/>
+      <stop offset="80%"  stop-color="#c4c4c4"/>
+      <stop offset="100%" stop-color="#909090"/>
+    </linearGradient>
+    <linearGradient id="ring-inner" x1="25%" y1="5%" x2="75%" y2="95%">
+      <stop offset="0%"   stop-color="#f8f8f8"/>
+      <stop offset="50%"  stop-color="#e0e0e0"/>
+      <stop offset="100%" stop-color="#d0d0d0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer metallic ring -->
+  <circle cx="100" cy="100" r="99" fill="url(#ring-outer)"/>
+  <!-- Inner ring bevel -->
+  <circle cx="100" cy="100" r="88" fill="url(#ring-inner)"/>
+  <!-- White interior -->
+  <circle cx="100" cy="100" r="84" fill="white"/>
+
+  <!-- EA-style mark centred in upper half -->
+  <!-- Outer chevron/arrow shape -->
+  <polygon points="48,36 116,36 152,68 116,100 48,100" fill="#d42b2b"/>
+  <!-- White inner cutout — creates two thick E-bars + A triangular gap -->
+  <polygon points="62,57 116,57 134,68 116,79 62,79" fill="white"/>
+
+  <!-- SPORTS -->
+  <text x="100" y="143"
+        text-anchor="middle"
+        font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
+        font-size="21"
+        font-weight="900"
+        fill="#1a2560"
+        letter-spacing="2.5">SPORTS</text>
+
+  <!-- DAY -->
+  <text x="100" y="170"
+        text-anchor="middle"
+        font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
+        font-size="24"
+        font-weight="900"
+        fill="#1a2560"
+        letter-spacing="6">DAY</text>
+</svg>
