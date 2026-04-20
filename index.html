@@ -263,72 +263,63 @@ function renderAvailability() {
 
   const { WIN_START, WIN_END } = getWindow();
 
-  // All fields from the CSV, listed as-is.
-  const allFields = [...new Set(
-    permits.map(p => p.Field).filter(Boolean)
-  )].sort();
+  // Treat all non-basketball permits as sharing the same multi-use field.
+  // (Soccer / Softball / Baseball / Football permits all occupy the same grass.)
+  const permitsOnField = permits
+    .map(p => ({
+      start: parseDateTime(p.Start),
+      end: parseDateTime(p.End),
+      field: p.Field,
+      org: p.Organization || p["Event Name"] || "Unknown",
+      type: (p["Sport or Event Type"] || "").trim(),
+    }))
+    .filter(p => p.start && p.end && p.start.date === date)
+    .filter(p => p.field && !/basketball/i.test(p.field))
+    .filter(p => p.start.minutes < WIN_END && p.end.minutes > WIN_START)
+    .sort((a, b) => a.start.minutes - b.start.minutes);
 
-  if (!allFields.length) {
-    out.innerHTML = `<p class="muted">No fields found in the loaded data.</p>`;
-    return;
+  // Merge overlapping permit intervals into one "busy" timeline.
+  const busy = [];
+  for (const p of permitsOnField) {
+    const s = Math.max(p.start.minutes, WIN_START);
+    const e = Math.min(p.end.minutes, WIN_END);
+    if (!busy.length || s > busy[busy.length - 1].end) busy.push({ start: s, end: e });
+    else busy[busy.length - 1].end = Math.max(busy[busy.length - 1].end, e);
   }
 
-  const parts = [];
-  for (const field of allFields) {
-    // Permits for this field on this date that overlap the morning window.
-    const permitsHere = permits
-      .filter(p => p.Field === field)
-      .map(p => ({
-        start: parseDateTime(p.Start),
-        end: parseDateTime(p.End),
-        org: p.Organization || p["Event Name"] || "Unknown",
-        type: (p["Sport or Event Type"] || "").trim(),
-      }))
-      .filter(p => p.start && p.end && p.start.date === date)
-      .filter(p => p.start.minutes < WIN_END && p.end.minutes > WIN_START)
-      .sort((a, b) => a.start.minutes - b.start.minutes);
+  // Free gaps inside the window.
+  const gaps = [];
+  let cursor = WIN_START;
+  for (const b of busy) {
+    if (b.start > cursor) gaps.push([cursor, b.start]);
+    cursor = Math.max(cursor, b.end);
+  }
+  if (cursor < WIN_END) gaps.push([cursor, WIN_END]);
 
-    // Compute free gaps in [WIN_START, WIN_END].
-    const gaps = [];
-    let cursor = WIN_START;
-    for (const p of permitsHere) {
+  let statusHtml;
+  if (!permitsOnField.length) statusHtml = `<span class="status-free">FREE ${minToLabel(WIN_START)} – ${minToLabel(WIN_END)}</span>`;
+  else if (!gaps.length) statusHtml = `<span class="status-taken">TAKEN</span>`;
+  else statusHtml = `<span class="status-partial">PARTIALLY FREE</span>`;
+
+  let bodyHtml = "";
+  if (gaps.length) {
+    bodyHtml += gaps.map(([s, e]) =>
+      `<div class="slot">✅ Free ${minToLabel(s)} – ${minToLabel(e)}</div>`
+    ).join("");
+  }
+  if (permitsOnField.length) {
+    bodyHtml += permitsOnField.map(p => {
       const s = Math.max(p.start.minutes, WIN_START);
       const e = Math.min(p.end.minutes, WIN_END);
-      if (s > cursor) gaps.push([cursor, s]);
-      cursor = Math.max(cursor, e);
-    }
-    if (cursor < WIN_END) gaps.push([cursor, WIN_END]);
-
-    let statusHtml, bodyHtml = "";
-    if (!permitsHere.length) {
-      statusHtml = `<span class="status-free">FREE ${minToLabel(WIN_START)} – ${minToLabel(WIN_END)}</span>`;
-    } else if (gaps.length === 0) {
-      statusHtml = `<span class="status-taken">TAKEN</span>`;
-    } else {
-      statusHtml = `<span class="status-partial">PARTIALLY FREE</span>`;
-    }
-
-    if (gaps.length) {
-      bodyHtml += gaps.map(([s, e]) =>
-        `<div class="slot">✅ Free ${minToLabel(s)} – ${minToLabel(e)}</div>`
-      ).join("");
-    }
-    if (permitsHere.length) {
-      bodyHtml += permitsHere.map(p => {
-        const s = Math.max(p.start.minutes, WIN_START);
-        const e = Math.min(p.end.minutes, WIN_END);
-        return `<div class="slot">⛔ ${minToLabel(s)} – ${minToLabel(e)} <span class="who">${p.org}${p.type ? ` <span class="tag">${p.type}</span>` : ""}</span></div>`;
-      }).join("");
-    }
-
-    parts.push(`
-      <div class="field-block">
-        <div class="field-name">${field} — ${statusHtml}</div>
-        ${bodyHtml}
-      </div>
-    `);
+      return `<div class="slot">⛔ ${minToLabel(s)} – ${minToLabel(e)} <span class="who">${p.org}${p.type ? ` <span class="tag">${p.field} • ${p.type}</span>` : ` <span class="tag">${p.field}</span>`}</span></div>`;
+    }).join("");
   }
-  out.innerHTML = parts.join("");
+
+  out.innerHTML = `
+    <div class="field-block">
+      <div class="field-name">DeWitt Clinton field — ${statusHtml}</div>
+      ${bodyHtml}
+    </div>`;
   renderSummary();
 }
 
@@ -578,42 +569,55 @@ function buildShareText() {
   const permits = getPermits();
   if (!permits) {
     lines.push("(No permit data loaded)");
+    return lines.join("\n");
+  }
+
+  // Same unified-field logic as renderAvailability: all non-basketball permits share the turf.
+  const here = permits
+    .map(p => ({
+      start: parseDateTime(p.Start),
+      end: parseDateTime(p.End),
+      field: p.Field,
+      org: p.Organization || p["Event Name"] || "Unknown",
+      type: (p["Sport or Event Type"] || "").trim(),
+    }))
+    .filter(p => p.start && p.end && p.start.date === date)
+    .filter(p => p.field && !/basketball/i.test(p.field))
+    .filter(p => p.start.minutes < WIN_END && p.end.minutes > WIN_START)
+    .sort((a, b) => a.start.minutes - b.start.minutes);
+
+  const busy = [];
+  for (const p of here) {
+    const s = Math.max(p.start.minutes, WIN_START);
+    const e = Math.min(p.end.minutes, WIN_END);
+    if (!busy.length || s > busy[busy.length-1].end) busy.push({ start: s, end: e });
+    else busy[busy.length-1].end = Math.max(busy[busy.length-1].end, e);
+  }
+  const gaps = [];
+  let cursor = WIN_START;
+  for (const b of busy) {
+    if (b.start > cursor) gaps.push([cursor, b.start]);
+    cursor = Math.max(cursor, b.end);
+  }
+  if (cursor < WIN_END) gaps.push([cursor, WIN_END]);
+
+  if (!here.length) {
+    lines.push(`✅ FREE ${winLabel}`);
+  } else if (!gaps.length) {
+    lines.push(`⛔ TAKEN ${winLabel}`);
+    for (const p of here) {
+      const s = Math.max(p.start.minutes, WIN_START), e = Math.min(p.end.minutes, WIN_END);
+      lines.push(`  • ${minToLabel(s)}–${minToLabel(e)} — ${p.field}: ${p.org}`);
+    }
   } else {
-    // Reuse the same logic as renderAvailability to describe each field.
-    const allFields = [...new Set(permits.map(p => p.Field).filter(Boolean))].sort();
-    for (const field of allFields) {
-      const here = permits
-        .filter(p => p.Field === field)
-        .map(p => ({ start: parseDateTime(p.Start), end: parseDateTime(p.End), org: p.Organization || p["Event Name"] || "Unknown" }))
-        .filter(p => p.start && p.end && p.start.date === date)
-        .filter(p => p.start.minutes < WIN_END && p.end.minutes > WIN_START)
-        .sort((a, b) => a.start.minutes - b.start.minutes);
-
-      const gaps = [];
-      let cursor = WIN_START;
-      for (const p of here) {
-        const s = Math.max(p.start.minutes, WIN_START);
-        const e = Math.min(p.end.minutes, WIN_END);
-        if (s > cursor) gaps.push([cursor, s]);
-        cursor = Math.max(cursor, e);
-      }
-      if (cursor < WIN_END) gaps.push([cursor, WIN_END]);
-
-      if (!here.length) {
-        lines.push(`${field}: ✅ FREE ${winLabel}`);
-      } else if (!gaps.length) {
-        const who = here.map(p => `${p.org} ${minToLabel(Math.max(p.start.minutes,WIN_START))}–${minToLabel(Math.min(p.end.minutes,WIN_END))}`).join("; ");
-        lines.push(`${field}: ⛔ TAKEN — ${who}`);
-      } else {
-        lines.push(`${field}: 🟡 Partial`);
-        for (const [s, e] of gaps) lines.push(`  ✅ Free ${minToLabel(s)}–${minToLabel(e)}`);
-        for (const p of here) {
-          const s = Math.max(p.start.minutes, WIN_START), e = Math.min(p.end.minutes, WIN_END);
-          lines.push(`  ⛔ ${minToLabel(s)}–${minToLabel(e)} ${p.org}`);
-        }
-      }
+    lines.push(`🟡 PARTIALLY FREE`);
+    for (const [s, e] of gaps) lines.push(`  ✅ Free ${minToLabel(s)}–${minToLabel(e)}`);
+    for (const p of here) {
+      const s = Math.max(p.start.minutes, WIN_START), e = Math.min(p.end.minutes, WIN_END);
+      lines.push(`  ⛔ ${minToLabel(s)}–${minToLabel(e)} — ${p.field}: ${p.org}`);
     }
   }
+
   return lines.join("\n");
 }
 
