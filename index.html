@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --bg: #0a0c0f;
@@ -306,6 +307,12 @@ const LS_NAMES = "dewitt_names_v1";
 const LS_GAMES = "dewitt_games_v1";
 const $ = id => document.getElementById(id);
 
+// ── SUPABASE ─────────────────────────────────────────────────
+const SUPABASE_URL = 'https://wkvakrcappcyftdoejjw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_rR4eJsgFCJbDjXDNr41ilA_K513-qgF';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let gamesCache = [];
+
 let currentTeams = null;
 let weatherCache = null;
 
@@ -572,7 +579,11 @@ function buildTeamsText() {
 $("shuffle").addEventListener("click", renderTeams);
 $("reroll").addEventListener("click", renderTeams);
 $("shareTeamsBtn").addEventListener("click", () => showModal(buildTeamsText()));
-$("names").addEventListener("input", () => localStorage.setItem(LS_NAMES, $("names").value));
+$("names").addEventListener("input", () => {
+  const val = $("names").value;
+  localStorage.setItem(LS_NAMES, val);
+  sb.from('config').upsert({key:'names',value:val}).then(()=>{});
+});
 
 // ── ADMIN AUTH ────────────────────────────────────────────────
 let adminUnlocked = false;
@@ -606,8 +617,14 @@ function requireAdmin(fn) {
 }
 
 // ── GAMES ─────────────────────────────────────────────────────
-function getGames() { try { return JSON.parse(localStorage.getItem(LS_GAMES)||"[]"); } catch { return []; } }
-function saveGames(g) { localStorage.setItem(LS_GAMES, JSON.stringify(g)); }
+function getGames() { return gamesCache; }
+function saveGames(newGames) {
+  const deletedIds = gamesCache.map(g=>g.id).filter(id=>!newGames.find(g=>g.id===id));
+  const toUpsert   = newGames.filter(g=>{ const o=gamesCache.find(o=>o.id===g.id); return !o||JSON.stringify(o)!==JSON.stringify(g); });
+  gamesCache = newGames;
+  if (deletedIds.length) sb.from('games').delete().in('id',deletedIds).then(()=>{});
+  if (toUpsert.length)   sb.from('games').upsert(toUpsert.map(g=>({id:g.id,data:g}))).then(()=>{});
+}
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
 
 $("lockBtn").addEventListener("click", () => {
@@ -1074,15 +1091,45 @@ $("clearCsv").addEventListener("click", ()=>{
 $("timeStart").addEventListener("change",()=>{renderAvailability();renderWeather();});
 $("timeEnd").addEventListener("change",()=>{renderAvailability();renderWeather();});
 
+// ── SUPABASE SYNC ─────────────────────────────────────────────
+async function loadFromSupabase() {
+  try {
+    const [{ data: gData }, { data: nData }] = await Promise.all([
+      sb.from('games').select('id,data').order('created_at', { ascending: false }),
+      sb.from('config').select('value').eq('key','names').maybeSingle()
+    ]);
+    if (gData) gamesCache = gData.map(r => r.data);
+    if (nData) { $('names').value = nData.value; localStorage.setItem(LS_NAMES, nData.value); }
+  } catch(e) {
+    console.warn('Supabase load failed, falling back to localStorage:', e);
+    gamesCache = JSON.parse(localStorage.getItem(LS_GAMES)||'[]');
+    $('names').value = localStorage.getItem(LS_NAMES)||'';
+  }
+}
+
+function setupRealtime() {
+  sb.channel('db-changes')
+    .on('postgres_changes', { event:'*', schema:'public', table:'games' }, async () => {
+      const { data } = await sb.from('games').select('id,data').order('created_at',{ascending:false});
+      if (data) { gamesCache = data.map(r => r.data); renderStats(); }
+    })
+    .on('postgres_changes', { event:'*', schema:'public', table:'config' }, async () => {
+      const { data } = await sb.from('config').select('value').eq('key','names').maybeSingle();
+      if (data) $('names').value = data.value;
+    })
+    .subscribe();
+}
+
 // ── INIT ─────────────────────────────────────────────────────
-(function init() {
+(async function init() {
   const iso=new Date().toISOString().slice(0,10);
   flatpickr("#date",{
     defaultDate:iso, dateFormat:"Y-m-d", altInput:true, altFormat:"D, M j Y",
     onChange:(_,dateStr)=>{ $("date").value=dateStr; renderAvailability(); renderWeather(); }
   });
-  $("names").value=localStorage.getItem(LS_NAMES)||"";
-  updateDataStatus(); renderAvailability(); renderWeather();
+  await loadFromSupabase();
+  updateDataStatus(); renderAvailability(); renderWeather(); renderStats();
+  setupRealtime();
   const ts=parseInt(localStorage.getItem(LS_CSV+"_ts")||"0",10);
   if(!ts||(Date.now()-ts)/86400000>7) refreshCsvFromNetwork({silent:true});
 })();
