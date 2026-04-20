@@ -256,7 +256,7 @@ details[open] summary::before { content: "▼ "; }
         <div id="lbAssists"></div>
       </div>
       <div class="card">
-        <div class="lbl">🏆 Win / Loss</div>
+        <div class="lbl">🏆 Points table</div>
         <div id="lbWins"></div>
       </div>
     </div>
@@ -740,17 +740,19 @@ function renderStats() {
   const played = getFilteredPlayed(allPlayed);
 
   const stats={};
-  const ensure=p=>{ if(!stats[p]) stats[p]={goals:0,assists:0,wins:0,losses:0}; };
+  const ensure=p=>{ if(!stats[p]) stats[p]={goals:0,assists:0,wins:0,draws:0,losses:0}; };
   for (const g of played) {
-    // Derive winner from goal counts (independent of the saved scoreline)
+    // Derive outcome from goal counts (independent of the saved scoreline)
     const goalsA=(g.result.goals||[]).filter(ev=>ev.team==="A").length;
     const goalsB=(g.result.goals||[]).filter(ev=>ev.team==="B").length;
-    const winner=goalsA>goalsB?"A":goalsB>goalsA?"B":null;
+    const outcome=goalsA>goalsB?"A":goalsB>goalsA?"B":"draw";
     [...g.teamA,...g.teamB].forEach(p=>{
       ensure(p);
-      if (winner==="A"&&g.teamA.includes(p)) stats[p].wins++;
-      else if (winner==="B"&&g.teamB.includes(p)) stats[p].wins++;
-      else if (winner) stats[p].losses++;
+      if (outcome==="draw") stats[p].draws++;
+      else if (outcome==="A"&&g.teamA.includes(p)) stats[p].wins++;
+      else if (outcome==="A"&&g.teamB.includes(p)) stats[p].losses++;
+      else if (outcome==="B"&&g.teamB.includes(p)) stats[p].wins++;
+      else if (outcome==="B"&&g.teamA.includes(p)) stats[p].losses++;
     });
     (g.result.goals||[]).forEach(ev=>{
       ensure(ev.player); stats[ev.player].goals++;
@@ -784,10 +786,24 @@ function renderStats() {
   $("statGoals").textContent = played.reduce((s,g)=>(g.result?.goals?.length||0)+s, 0);
 
   const entries=Object.entries(stats);
-  const lbRow=([name,s],i,key)=>`<div class="lb-row"><div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-val">${key==="wl"?`${s.wins}W–${s.losses}L`:s[key]}</div></div>`;
+  const lbRow=([name,s],i,key)=>`<div class="lb-row"><div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-val">${s[key]}</div></div>`;
   $("lbGoals").innerHTML=[...entries].filter(([,s])=>s.goals>0).sort((a,b)=>b[1].goals-a[1].goals).map((e,i)=>lbRow(e,i,"goals")).join("")||`<p style="color:var(--muted);font-size:13px">No goals yet.</p>`;
   $("lbAssists").innerHTML=[...entries].filter(([,s])=>s.assists>0).sort((a,b)=>b[1].assists-a[1].assists).map((e,i)=>lbRow(e,i,"assists")).join("")||`<p style="color:var(--muted);font-size:13px">No assists yet.</p>`;
-  $("lbWins").innerHTML=[...entries].filter(([,s])=>s.wins+s.losses>0).sort((a,b)=>b[1].wins-a[1].wins).map((e,i)=>lbRow(e,i,"wl")).join("")||`<p style="color:var(--muted);font-size:13px">No results yet.</p>`;
+  $("lbWins").innerHTML=[...entries]
+    .filter(([,s])=>s.wins+s.draws+s.losses>0)
+    .sort((a,b)=>{
+      const pa=a[1].wins*3+a[1].draws, pb=b[1].wins*3+b[1].draws;
+      return pb-pa||b[1].wins-a[1].wins;
+    })
+    .map(([name,s],i)=>{
+      const pts=s.wins*3+s.draws;
+      return `<div class="lb-row">
+        <div class="lb-rank">${i+1}</div>
+        <div class="lb-name">${name}</div>
+        <div style="font-size:12px;color:var(--muted);white-space:nowrap">${s.wins}W · ${s.draws}D · ${s.losses}L</div>
+        <div class="lb-val" style="white-space:nowrap">${pts}<span style="font-size:11px;font-weight:500;color:var(--muted);margin-left:2px">pts</span></div>
+      </div>`;
+    }).join("")||`<p style="color:var(--muted);font-size:13px">No results yet.</p>`;
   setTimeout(initSortables, 0);
 }
 
