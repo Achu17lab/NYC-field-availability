@@ -107,9 +107,6 @@ details[open] summary::before { content: "▼ "; }
 .field-chip.active { background:rgba(34,197,94,.12); color:var(--green); border-color:var(--green); }
 .field-chip:not(.active):hover { border-color: var(--text); color: var(--text); }
 
-.sf-pill { padding:5px 14px; border-radius:20px; border:1px solid transparent; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; background:transparent; }
-.sf-pill.active { background:var(--surface2); color:var(--text); border-color:var(--border); }
-.sf-pill:not(.active) { color:var(--muted); }
 .mo-pill { padding:5px 11px; border-radius:20px; border:1px solid var(--border); font-size:12px; cursor:pointer; transition:all .15s; background:transparent; color:var(--muted); }
 .mo-pill.active { background:var(--green); color:#0a0c0f; border-color:var(--green); font-weight:600; }
 .mo-pill.has-data:not(.active) { color:var(--text); }
@@ -223,21 +220,21 @@ details[open] summary::before { content: "▼ "; }
   <!-- SEASON STATS VIEW -->
   <div id="stab-season-view" style="display:none">
 
-    <!-- Filter bar -->
-    <div style="display:flex;gap:2px;background:var(--surface);border-radius:10px;padding:3px;margin-bottom:10px">
-      <button id="sf-all" class="sf-pill active" style="flex:1" onclick="setStatMode('all')">All time</button>
-      <button id="sf-month" class="sf-pill" style="flex:1" onclick="setStatMode('month')">Monthly</button>
-    </div>
-
-    <!-- Month/year picker (shown in monthly mode) -->
-    <div id="sf-picker" style="display:none;margin-bottom:12px">
-      <div id="sf-year-bar" style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap"></div>
-      <div id="sf-month-bar" style="display:flex;gap:4px;flex-wrap:wrap"></div>
-    </div>
-
     <div id="lbSection" style="display:none">
       <div class="card" style="background:var(--surface2)">
-        <div style="font-size:17px;font-weight:700;margin-bottom:4px" id="statsTitle">Season stats</div>
+        <!-- Title + All time / Monthly toggle in one row -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div style="font-size:17px;font-weight:700" id="statsTitle">Season stats</div>
+          <div style="display:flex;gap:1px;background:var(--surface);border-radius:8px;padding:2px;flex-shrink:0">
+            <button id="sf-all" onclick="setStatMode('all')" style="padding:4px 11px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text);transition:all .15s">All time</button>
+            <button id="sf-month" onclick="setStatMode('month')" style="padding:4px 11px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s">Monthly</button>
+          </div>
+        </div>
+        <!-- Month/year picker (shown in monthly mode) -->
+        <div id="sf-picker" style="display:none;margin:8px 0 10px">
+          <div id="sf-year-bar" style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap"></div>
+          <div id="sf-month-bar" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+        </div>
         <div id="statsRange" style="font-size:12px;color:var(--muted);margin-bottom:14px"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div style="background:var(--surface);border-radius:10px;padding:10px;text-align:center">
@@ -668,8 +665,10 @@ function setStatMonth(month) {
 
 function updateStatFilterUI() {
   const isMonth = statFilter.mode === 'month';
-  $("sf-all").classList.toggle("active", !isMonth);
-  $("sf-month").classList.toggle("active", isMonth);
+  $("sf-all").style.background  = !isMonth ? "var(--surface2)" : "transparent";
+  $("sf-all").style.color       = !isMonth ? "var(--text)"     : "var(--muted)";
+  $("sf-month").style.background =  isMonth ? "var(--surface2)" : "transparent";
+  $("sf-month").style.color      =  isMonth ? "var(--text)"     : "var(--muted)";
   $("sf-picker").style.display = isMonth ? "" : "none";
   if (!isMonth) return;
 
