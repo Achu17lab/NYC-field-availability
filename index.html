@@ -103,8 +103,7 @@
   .weather .icon { font-size: 22px; }
   .weather .main { font-weight: 600; }
   .weather .detail { color: var(--muted); font-size: 13px; }
-  .flatpickr-calendar.inline { background: #0b0d12; border: 1px solid var(--border); margin-top: 6px; }
-  .flatpickr-input { display: none !important; }
+  .flatpickr-calendar { background: #0b0d12; border: 1px solid var(--border); }
   .summary {
     background: #0b0d12;
     border: 1px solid var(--border);
@@ -679,11 +678,12 @@ $("names").addEventListener("input", () => {
   const iso = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   $("date").value = iso;
 
-  // Inline calendar via flatpickr — always visible, consistent across browsers.
+  // Calendar popup via flatpickr — click the field, calendar drops down.
   flatpickr("#date", {
-    inline: true,
     defaultDate: iso,
     dateFormat: "Y-m-d",
+    altInput: true,
+    altFormat: "D, M j, Y",
     onChange: (_, dateStr) => {
       $("date").value = dateStr;
       renderAvailability();
