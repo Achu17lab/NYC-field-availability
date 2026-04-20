@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <style>
 :root {
   --bg: #0a0c0f;
@@ -100,6 +101,7 @@ details summary::before { content: "▶ "; font-size: 10px; }
 details[open] summary::before { content: "▼ "; }
 
 .flatpickr-calendar { background: var(--surface) !important; border-color: var(--border) !important; }
+.sortable-ghost { opacity: .35; }
 </style>
 </head>
 <body>
@@ -628,6 +630,7 @@ function renderStats() {
   $("lbGoals").innerHTML=[...entries].filter(([,s])=>s.goals>0).sort((a,b)=>b[1].goals-a[1].goals).map((e,i)=>lbRow(e,i,"goals")).join("")||`<p style="color:var(--muted);font-size:13px">No goals yet.</p>`;
   $("lbAssists").innerHTML=[...entries].filter(([,s])=>s.assists>0).sort((a,b)=>b[1].assists-a[1].assists).map((e,i)=>lbRow(e,i,"assists")).join("")||`<p style="color:var(--muted);font-size:13px">No assists yet.</p>`;
   $("lbWins").innerHTML=[...entries].filter(([,s])=>s.wins+s.losses>0).sort((a,b)=>b[1].wins-a[1].wins).map((e,i)=>lbRow(e,i,"wl")).join("")||`<p style="color:var(--muted);font-size:13px">No results yet.</p>`;
+  setTimeout(initSortables, 0);
 }
 
 function renderGameBody(g) {
@@ -644,16 +647,22 @@ function renderGameBody(g) {
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
       <input type="date" id="gdate-${g.id}" value="${g.date}" style="flex:1" onchange="saveGameDate('${g.id}')" />
     </div>
-    <div class="lbl">Teams</div>
+    <div class="lbl">Teams <span style="font-weight:400;color:var(--muted);font-size:11px;text-transform:none;letter-spacing:0">— drag to swap</span></div>
     <div class="row" style="margin-bottom:14px;font-size:13px">
       <div>
         <div style="color:var(--muted);margin-bottom:6px">Team A</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${g.teamA.map(p=>`<span class="badge badge-green">${p}</span>`).join("")}</div>
+        <div id="sort-A-${g.id}" data-game="${g.id}" data-team="A"
+          style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
+          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:grab;user-select:none">${p}</span>`).join("")}
+        </div>
         <div style="display:flex;gap:6px"><input id="addA-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','A')">+</button></div>
       </div>
       <div>
         <div style="color:var(--muted);margin-bottom:6px">Team B</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${g.teamB.map(p=>`<span class="badge badge-yellow">${p}</span>`).join("")}</div>
+        <div id="sort-B-${g.id}" data-game="${g.id}" data-team="B"
+          style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
+          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:grab;user-select:none">${p}</span>`).join("")}
+        </div>
         <div style="display:flex;gap:6px"><input id="addB-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','B')">+</button></div>
       </div>
     </div>
@@ -682,7 +691,36 @@ function renderGameBody(g) {
   </div>`;
 }
 
-function toggleGame(id) { $(`gb-${id}`).classList.toggle("open"); }
+function toggleGame(id) {
+  $(`gb-${id}`).classList.toggle("open");
+  initSortables();
+}
+
+function initSortables() {
+  document.querySelectorAll('[data-game][data-team]').forEach(el => {
+    if (el._sortable) return;
+    const gameId = el.dataset.game;
+    el._sortable = Sortable.create(el, {
+      group: `g-${gameId}`,
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      onEnd: () => saveTeamOrder(gameId),
+    });
+  });
+}
+
+function saveTeamOrder(gameId) {
+  const games = getGames(), g = games.find(x => x.id === gameId);
+  if (!g) return;
+  const elA = $(`sort-A-${gameId}`), elB = $(`sort-B-${gameId}`);
+  if (!elA || !elB) return;
+  g.teamA = [...elA.querySelectorAll('[data-player]')].map(e => e.dataset.player);
+  g.teamB = [...elB.querySelectorAll('[data-player]')].map(e => e.dataset.player);
+  // Re-colour badges to match their new team
+  elA.querySelectorAll('[data-player]').forEach(e => { e.className = 'badge badge-green'; e.style.cursor='grab'; e.style.userSelect='none'; });
+  elB.querySelectorAll('[data-player]').forEach(e => { e.className = 'badge badge-yellow'; e.style.cursor='grab'; e.style.userSelect='none'; });
+  saveGames(games);
+}
 
 function saveScore(id) {
   const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
