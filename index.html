@@ -797,11 +797,11 @@ function renderStats() {
       return pb-pa||b[1].wins-a[1].wins;
     })
     .map(([name,s],i)=>{
-      const pts=s.wins*3+s.draws;
+      const gp=s.wins+s.draws+s.losses, pts=s.wins*3+s.draws;
       return `<div class="lb-row">
         <div class="lb-rank">${i+1}</div>
         <div class="lb-name">${name}</div>
-        <div style="font-size:12px;color:var(--muted);white-space:nowrap">${s.wins}W · ${s.draws}D · ${s.losses}L</div>
+        <div style="font-size:12px;color:var(--muted);white-space:nowrap">${gp}GP · ${s.wins}W · ${s.draws}D · ${s.losses}L</div>
         <div class="lb-val" style="white-space:nowrap">${pts}<span style="font-size:11px;font-weight:500;color:var(--muted);margin-left:2px">pts</span></div>
       </div>`;
     }).join("")||`<p style="color:var(--muted);font-size:13px">No results yet.</p>`;
