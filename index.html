@@ -746,13 +746,14 @@ function renderStats() {
     const goalsA=(g.result.goals||[]).filter(ev=>ev.team==="A").length;
     const goalsB=(g.result.goals||[]).filter(ev=>ev.team==="B").length;
     const outcome=goalsA>goalsB?"A":goalsB>goalsA?"B":"draw";
-    [...g.teamA,...g.teamB].forEach(p=>{
+    const teamASet=new Set(g.teamA), teamBSet=new Set(g.teamB);
+    [...new Set([...g.teamA,...g.teamB])].forEach(p=>{
       ensure(p);
       if (outcome==="draw") stats[p].draws++;
-      else if (outcome==="A"&&g.teamA.includes(p)) stats[p].wins++;
-      else if (outcome==="A"&&g.teamB.includes(p)) stats[p].losses++;
-      else if (outcome==="B"&&g.teamB.includes(p)) stats[p].wins++;
-      else if (outcome==="B"&&g.teamA.includes(p)) stats[p].losses++;
+      else if (outcome==="A"&&teamASet.has(p)) stats[p].wins++;
+      else if (outcome==="A"&&teamBSet.has(p)) stats[p].losses++;
+      else if (outcome==="B"&&teamBSet.has(p)) stats[p].wins++;
+      else if (outcome==="B"&&teamASet.has(p)) stats[p].losses++;
     });
     (g.result.goals||[]).forEach(ev=>{
       ensure(ev.player); stats[ev.player].goals++;
