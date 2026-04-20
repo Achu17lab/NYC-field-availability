@@ -1,40 +1,38 @@
 <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
   <defs>
-    <linearGradient id="ring-outer" x1="25%" y1="5%" x2="75%" y2="95%">
-      <stop offset="0%"   stop-color="#f0f0f0"/>
-      <stop offset="25%"  stop-color="#c8c8c8"/>
-      <stop offset="55%"  stop-color="#a0a0a0"/>
-      <stop offset="80%"  stop-color="#c4c4c4"/>
+    <linearGradient id="ring-outer" x1="20%" y1="5%" x2="80%" y2="95%">
+      <stop offset="0%"   stop-color="#f2f2f2"/>
+      <stop offset="20%"  stop-color="#d8d8d8"/>
+      <stop offset="55%"  stop-color="#a8a8a8"/>
+      <stop offset="80%"  stop-color="#c8c8c8"/>
       <stop offset="100%" stop-color="#909090"/>
     </linearGradient>
-    <linearGradient id="ring-inner" x1="25%" y1="5%" x2="75%" y2="95%">
+    <linearGradient id="ring-mid" x1="20%" y1="5%" x2="80%" y2="95%">
       <stop offset="0%"   stop-color="#f8f8f8"/>
-      <stop offset="50%"  stop-color="#e0e0e0"/>
-      <stop offset="100%" stop-color="#d0d0d0"/>
+      <stop offset="100%" stop-color="#d8d8d8"/>
     </linearGradient>
   </defs>
 
-  <!-- Outer metallic ring -->
+  <!-- Metallic outer ring -->
   <circle cx="100" cy="100" r="99" fill="url(#ring-outer)"/>
-  <!-- Inner ring bevel -->
-  <circle cx="100" cy="100" r="88" fill="url(#ring-inner)"/>
+  <circle cx="100" cy="100" r="89" fill="url(#ring-mid)"/>
   <!-- White interior -->
   <circle cx="100" cy="100" r="84" fill="white"/>
 
-  <!-- EA-style mark centred in upper half -->
-  <!-- Outer chevron/arrow shape -->
-  <polygon points="48,36 116,36 152,68 116,100 48,100" fill="#d42b2b"/>
-  <!-- White inner cutout — creates two thick E-bars + A triangular gap -->
-  <polygon points="62,57 116,57 134,68 116,79 62,79" fill="white"/>
+  <!-- EA-style mark: outer pentagon pointing right -->
+  <polygon points="48,34 118,34 160,68 118,102 48,102" fill="#d42b2b"/>
+
+  <!-- White cutout reaches ALL THE WAY to left edge — creates two separate bars -->
+  <polygon points="46,57 118,57 160,68 118,79 46,79" fill="white"/>
 
   <!-- SPORTS -->
   <text x="100" y="143"
         text-anchor="middle"
         font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
-        font-size="21"
+        font-size="20"
         font-weight="900"
         fill="#1a2560"
-        letter-spacing="2.5">SPORTS</text>
+        letter-spacing="3">SPORTS</text>
 
   <!-- DAY -->
   <text x="100" y="170"
@@ -43,5 +41,5 @@
         font-size="24"
         font-weight="900"
         fill="#1a2560"
-        letter-spacing="6">DAY</text>
+        letter-spacing="7">DAY</text>
 </svg>
