@@ -508,7 +508,7 @@ function shuffle(arr) {
   return a;
 }
 function renderTeams() {
-  const names=$("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  const names=$("names").value.split("\n").map(s=>s.trim().replace(/^\d+[\.\)]\s*/,'')).filter(Boolean);
   if (names.length<2) { $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none"; currentTeams=null; return; }
   const s=shuffle(names), half=Math.ceil(s.length/2);
   currentTeams={teamA:s.slice(0,half),teamB:s.slice(half)};
