@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DeWitt Clinton Soccer</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2f3a;
+    --text: #e8ebf0;
+    --muted: #8a93a4;
+    --accent: #4ade80;
+    --danger: #f87171;
+    --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+  section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  h2 { margin: 0 0 12px; font-size: 16px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input[type=date], input[type=text], textarea, button {
+    font: inherit;
+    color: var(--text);
+    background: #0b0d12;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    width: 100%;
+  }
+  textarea { resize: vertical; min-height: 120px; font-family: ui-monospace, monospace; font-size: 14px; }
+  button {
+    cursor: pointer;
+    background: var(--accent);
+    color: #0b0d12;
+    border: none;
+    font-weight: 600;
+  }
+  button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  button:hover { filter: brightness(1.08); }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .field-block { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
+  .field-block:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+  .field-name { font-weight: 600; margin-bottom: 6px; }
+  .status-free { color: var(--accent); font-weight: 600; }
+  .status-partial { color: var(--warn); font-weight: 600; }
+  .status-taken { color: var(--danger); font-weight: 600; }
+  .slot { font-size: 14px; margin: 4px 0; }
+  .slot .who { color: var(--muted); }
+  .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .team {
+    background: #0b0d12;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .team h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .team ol { margin: 0; padding-left: 20px; }
+  .team li { padding: 2px 0; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #252a36;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .weather {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #0b0d12;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  .weather .icon { font-size: 22px; }
+  .weather .main { font-weight: 600; }
+  .weather .detail { color: var(--muted); font-size: 13px; }
+  .summary {
+    background: #0b0d12;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 14px;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>DeWitt Clinton Soccer</h1>
+  <p class="sub">Field availability, weather &amp; team picker</p>
+
+  <section>
+    <h2>1. Check availability</h2>
+    <label for="date">Date</label>
+    <input type="date" id="date" />
+    <div class="row" style="margin-top:10px">
+      <div>
+        <label for="timeStart">From</label>
+        <input type="time" id="timeStart" value="07:30" />
+      </div>
+      <div>
+        <label for="timeEnd">To</label>
+        <input type="time" id="timeEnd" value="10:30" />
+      </div>
+    </div>
+    <div id="weather" style="margin-top:12px"></div>
+    <div id="avail" style="margin-top:14px"></div>
+    <div id="summary" class="summary" hidden></div>
+    <div class="actions">
+      <button id="copy" class="secondary" hidden>📋 Copy</button>
+      <button id="share" class="secondary" hidden>📤 Share to WhatsApp</button>
+    </div>
+    <details>
+      <summary id="dataStatus">No permit data loaded</summary>
+      <div style="margin-top:10px">
+        <p class="muted" style="margin:0 0 8px">Data source:
+          <a href="https://www.nycgovparks.org/permits/field-and-court/issued/M022/csv" target="_blank" rel="noopener" style="color:var(--accent)">NYC Parks CSV</a>
+          — auto-refreshes monthly.</p>
+        <div class="actions" style="margin-top:0">
+          <button id="refreshCsv">🔄 Refresh now</button>
+        </div>
+        <p class="muted" style="margin:10px 0 6px">Manual fallback (if auto-refresh fails):</p>
+        <textarea id="csv" placeholder='"Start","End","Field",...'></textarea>
+        <div class="actions">
+          <button id="loadCsv" class="secondary">Load pasted CSV</button>
+          <button class="secondary" id="clearCsv">Clear data</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>2. Pick teams</h2>
+    <label for="names">Players (one per line)</label>
+    <textarea id="names" placeholder="Alice&#10;Bob&#10;Carol&#10;Dave"></textarea>
+    <div class="actions">
+      <button id="shuffle">Randomize teams</button>
+      <button class="secondary" id="reroll" hidden>Re-roll</button>
+      <button class="secondary" id="shareTeams" hidden>📤 Share teams</button>
+    </div>
+    <div id="teams"></div>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+// ---------- CSV loading ----------
+const LS_CSV = "dewitt_csv_v1";
+const LS_NAMES = "dewitt_names_v1";
+
+const $ = (id) => document.getElementById(id);
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"' && text[i+1] === '"') { field += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ""; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ""; }
+      else if (c === '\r') {}
+      else { field += c; }
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  if (!rows.length) return [];
+  const header = rows[0].map(h => h.trim());
+  return rows.slice(1).filter(r => r.length === header.length).map(r => {
+    const obj = {};
+    header.forEach((h, i) => obj[h] = r[i]);
+    return obj;
+  });
+}
+
+// Parse "3/17/2026 8:00 a.m." -> { date: "2026-03-17", minutes: 480 }
+function parseDateTime(s) {
+  const m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(a\.m\.|p\.m\.)/i);
+  if (!m) return null;
+  const [, mo, da, yr, hh, mm, ampm] = m;
+  let hour = parseInt(hh, 10) % 12;
+  if (/p/i.test(ampm)) hour += 12;
+  const minutes = hour * 60 + parseInt(mm, 10);
+  const date = `${yr}-${mo.padStart(2,"0")}-${da.padStart(2,"0")}`;
+  return { date, minutes };
+}
+
+function minToLabel(m) {
+  const h24 = Math.floor(m / 60), mm = m % 60;
+  const ampm = h24 >= 12 ? "PM" : "AM";
+  const h12 = ((h24 + 11) % 12) + 1;
+  return `${h12}:${String(mm).padStart(2,"0")} ${ampm}`;
+}
+
+// ---------- availability ----------
+function timeToMin(s) {
+  const [h, m] = s.split(":").map(Number);
+  return h * 60 + m;
+}
+function getWindow() {
+  const s = $("timeStart").value || "07:30";
+  const e = $("timeEnd").value || "10:30";
+  return { WIN_START: timeToMin(s), WIN_END: timeToMin(e) };
+}
+
+function getPermits() {
+  const raw = localStorage.getItem(LS_CSV);
+  if (!raw) return null;
+  try { return parseCsv(raw); } catch { return null; }
+}
+
+function renderAvailability() {
+  const date = $("date").value;
+  const out = $("avail");
+  $("share").hidden = !date;
+  $("copy").hidden = !date;
+  const permits = getPermits();
+  if (!permits) {
+    out.innerHTML = `<p class="muted">Load permit data below to see availability.</p>`;
+    renderSummary();
+    return;
+  }
+  if (!date) { out.innerHTML = ""; renderSummary(); return; }
+
+  const { WIN_START, WIN_END } = getWindow();
+
+  // Soccer fields only. Collect all soccer fields seen in the data.
+  const soccerFields = [...new Set(
+    permits.map(p => p.Field).filter(f => f && /soccer/i.test(f))
+  )].sort();
+
+  if (!soccerFields.length) {
+    out.innerHTML = `<p class="muted">No soccer fields found in the loaded data.</p>`;
+    return;
+  }
+
+  const parts = [];
+  for (const field of soccerFields) {
+    // Permits for this field on this date that overlap the morning window.
+    const permitsHere = permits
+      .filter(p => p.Field === field)
+      .map(p => ({
+        start: parseDateTime(p.Start),
+        end: parseDateTime(p.End),
+        org: p.Organization || p["Event Name"] || "Unknown",
+        type: (p["Sport or Event Type"] || "").trim(),
+      }))
+      .filter(p => p.start && p.end && p.start.date === date)
+      .filter(p => p.start.minutes < WIN_END && p.end.minutes > WIN_START)
+      .sort((a, b) => a.start.minutes - b.start.minutes);
+
+    // Compute free gaps in [WIN_START, WIN_END].
+    const gaps = [];
+    let cursor = WIN_START;
+    for (const p of permitsHere) {
+      const s = Math.max(p.start.minutes, WIN_START);
+      const e = Math.min(p.end.minutes, WIN_END);
+      if (s > cursor) gaps.push([cursor, s]);
+      cursor = Math.max(cursor, e);
+    }
+    if (cursor < WIN_END) gaps.push([cursor, WIN_END]);
+
+    let statusHtml, bodyHtml = "";
+    if (!permitsHere.length) {
+      statusHtml = `<span class="status-free">FREE all morning</span>`;
+    } else if (gaps.length === 0) {
+      statusHtml = `<span class="status-taken">TAKEN</span>`;
+    } else {
+      statusHtml = `<span class="status-partial">PARTIALLY FREE</span>`;
+    }
+
+    if (gaps.length) {
+      bodyHtml += gaps.map(([s, e]) =>
+        `<div class="slot">✅ Free ${minToLabel(s)} – ${minToLabel(e)}</div>`
+      ).join("");
+    }
+    if (permitsHere.length) {
+      bodyHtml += permitsHere.map(p => {
+        const s = Math.max(p.start.minutes, WIN_START);
+        const e = Math.min(p.end.minutes, WIN_END);
+        return `<div class="slot">⛔ ${minToLabel(s)} – ${minToLabel(e)} <span class="who">${p.org}${p.type ? ` <span class="tag">${p.type}</span>` : ""}</span></div>`;
+      }).join("");
+    }
+
+    parts.push(`
+      <div class="field-block">
+        <div class="field-name">${field} — ${statusHtml}</div>
+        ${bodyHtml}
+      </div>
+    `);
+  }
+  out.innerHTML = parts.join("");
+  renderSummary();
+}
+
+function renderSummary() {
+  const el = $("summary");
+  const text = buildShareText();
+  if (!text) { el.hidden = true; el.textContent = ""; return; }
+  el.hidden = false;
+  el.textContent = text;
+}
+
+// ---------- CSV UI ----------
+function updateDataStatus() {
+  const permits = getPermits();
+  const el = $("dataStatus");
+  if (!permits) { el.textContent = "No permit data loaded — tap to paste CSV"; return; }
+  // Count dates covered.
+  const dates = new Set(
+    permits.map(p => {
+      const d = parseDateTime(p.Start);
+      return d ? d.date : null;
+    }).filter(Boolean)
+  );
+  const sorted = [...dates].sort();
+  const range = sorted.length ? `${sorted[0]} → ${sorted[sorted.length-1]}` : "no dated rows";
+  el.textContent = `Loaded ${permits.length} permits (${range}) — tap to update`;
+}
+
+$("loadCsv").addEventListener("click", () => {
+  const text = $("csv").value.trim();
+  if (!text) return;
+  localStorage.setItem(LS_CSV, text);
+  localStorage.setItem(LS_CSV + "_ts", String(Date.now()));
+  $("csv").value = "";
+  updateDataStatus();
+  renderAvailability();
+});
+
+$("clearCsv").addEventListener("click", () => {
+  localStorage.removeItem(LS_CSV);
+  localStorage.removeItem(LS_CSV + "_ts");
+  updateDataStatus();
+  renderAvailability();
+});
+
+$("date").addEventListener("change", () => { renderAvailability(); renderWeather(); });
+$("timeStart").addEventListener("change", () => { renderAvailability(); renderWeather(); });
+$("timeEnd").addEventListener("change", () => { renderAvailability(); renderWeather(); });
+
+// ---------- Auto-fetch CSV via CORS proxy ----------
+// NYC Parks blocks browser fetches (CORS). We route through a public CORS proxy.
+const CSV_URL = "https://www.nycgovparks.org/permits/field-and-court/issued/M022/csv";
+const PROXY_URL = (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`;
+
+async function refreshCsvFromNetwork({ silent } = {}) {
+  const btn = $("refreshCsv");
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Fetching…";
+  try {
+    const res = await fetch(PROXY_URL(CSV_URL));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    if (!text.includes("Start") || !text.includes("Field")) throw new Error("Response didn't look like the expected CSV");
+    localStorage.setItem(LS_CSV, text);
+    localStorage.setItem(LS_CSV + "_ts", String(Date.now()));
+    updateDataStatus();
+    renderAvailability();
+    btn.textContent = "✅ Refreshed";
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1600);
+  } catch (e) {
+    btn.textContent = "❌ Failed — paste manually";
+    btn.disabled = false;
+    if (!silent) console.warn("CSV refresh failed:", e);
+    setTimeout(() => { btn.textContent = orig; }, 2500);
+  }
+}
+
+$("refreshCsv").addEventListener("click", () => refreshCsvFromNetwork({}));
+
+// Auto-refresh on load if data is stale (>7 days) or missing.
+function maybeAutoRefresh() {
+  const ts = parseInt(localStorage.getItem(LS_CSV + "_ts") || "0", 10);
+  const ageDays = (Date.now() - ts) / 86400000;
+  if (!ts || ageDays > 7) refreshCsvFromNetwork({ silent: true });
+}
+
+// ---------- Weather (Open-Meteo, no API key) ----------
+// DeWitt Clinton Park, NYC
+const LAT = 40.7706, LON = -73.9931;
+
+// WMO weather codes -> { icon, label }
+function weatherFromCode(code) {
+  if (code === 0) return { icon: "☀️", label: "Sunny" };
+  if (code === 1) return { icon: "🌤️", label: "Mostly sunny" };
+  if (code === 2) return { icon: "⛅", label: "Partly cloudy" };
+  if (code === 3) return { icon: "☁️", label: "Cloudy" };
+  if (code === 45 || code === 48) return { icon: "🌫️", label: "Foggy" };
+  if (code >= 51 && code <= 57) return { icon: "🌦️", label: "Drizzle" };
+  if (code >= 61 && code <= 67) return { icon: "🌧️", label: "Rainy" };
+  if (code >= 71 && code <= 77) return { icon: "🌨️", label: "Snowy" };
+  if (code >= 80 && code <= 82) return { icon: "🌧️", label: "Rain showers" };
+  if (code >= 85 && code <= 86) return { icon: "🌨️", label: "Snow showers" };
+  if (code >= 95) return { icon: "⛈️", label: "Thunderstorm" };
+  return { icon: "🌡️", label: "Unknown" };
+}
+
+const cToF = (c) => (c * 9/5) + 32;
+
+let weatherCache = null; // { date, data }
+
+async function fetchWeather(date) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
+    `&hourly=temperature_2m,weather_code,precipitation_probability` +
+    `&temperature_unit=celsius&timezone=America%2FNew_York` +
+    `&start_date=${date}&end_date=${date}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("weather fetch failed");
+  return res.json();
+}
+
+async function renderWeather() {
+  const el = $("weather");
+  const date = $("date").value;
+  if (!date) { el.innerHTML = ""; return; }
+
+  // Check forecast range (~16 days from today)
+  const today = new Date(); today.setHours(0,0,0,0);
+  const picked = new Date(date + "T00:00");
+  const diffDays = Math.round((picked - today) / 86400000);
+  if (diffDays < 0) { el.innerHTML = `<div class="weather"><span class="icon">🕰️</span><span class="detail">Past date — no weather shown</span></div>`; return; }
+  if (diffDays > 15) { el.innerHTML = `<div class="weather"><span class="icon">🔮</span><span class="detail">Too far out for a forecast (>15 days)</span></div>`; return; }
+
+  el.innerHTML = `<div class="weather"><span class="icon">⏳</span><span class="detail">Loading weather…</span></div>`;
+  try {
+    const data = await fetchWeather(date);
+    const times = data.hourly.time;          // ["2026-04-20T00:00", ...]
+    const temps = data.hourly.temperature_2m;
+    const codes = data.hourly.weather_code;
+    const precip = data.hourly.precipitation_probability;
+
+    const { WIN_START, WIN_END } = getWindow();
+    const startHour = Math.floor(WIN_START / 60);
+    const endHour = Math.ceil(WIN_END / 60);
+    const idxs = times.map((t, i) => ({ t, i })).filter(({t}) => {
+      const h = parseInt(t.slice(11, 13), 10);
+      return h >= startHour && h < endHour;
+    }).map(({i}) => i);
+
+    if (!idxs.length) { el.innerHTML = ""; return; }
+    const minC = Math.min(...idxs.map(i => temps[i]));
+    const maxC = Math.max(...idxs.map(i => temps[i]));
+    // Pick the most common weather code in morning hours (or worst: prefer rain/snow over clear)
+    const code = idxs.map(i => codes[i]).sort((a,b) => b - a)[0];
+    const rainPct = Math.max(...idxs.map(i => precip[i] ?? 0));
+    const { icon, label } = weatherFromCode(code);
+
+    const minF = Math.round(cToF(minC));
+    const maxF = Math.round(cToF(maxC));
+    const minCr = Math.round(minC);
+    const maxCr = Math.round(maxC);
+
+    weatherCache = { date, summary: { icon, label, minC: minCr, maxC: maxCr, minF, maxF, rainPct } };
+    renderSummary();
+
+    el.innerHTML = `
+      <div class="weather">
+        <span class="icon">${icon}</span>
+        <div>
+          <div class="main">${label} — ${minCr}–${maxCr}°C / ${minF}–${maxF}°F</div>
+          <div class="detail">Rain chance: ${rainPct}% (${minToLabel(WIN_START)}–${minToLabel(WIN_END)})</div>
+        </div>
+      </div>`;
+  } catch (e) {
+    el.innerHTML = `<div class="weather"><span class="icon">⚠️</span><span class="detail">Couldn't load weather</span></div>`;
+  }
+}
+
+// ---------- Share to WhatsApp ----------
+function buildShareText() {
+  const date = $("date").value;
+  if (!date) return "";
+  const { WIN_START, WIN_END } = getWindow();
+  const d = new Date(date + "T00:00");
+  const dateLabel = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  const winLabel = `${minToLabel(WIN_START)}–${minToLabel(WIN_END)}`;
+
+  const lines = [`🏟️ DeWitt Clinton — ${dateLabel} (${winLabel})`];
+
+  if (weatherCache && weatherCache.date === date) {
+    const w = weatherCache.summary;
+    lines.push(`${w.icon} ${w.label}, ${w.minC}–${w.maxC}°C / ${w.minF}–${w.maxF}°F, ${w.rainPct}% rain`);
+  }
+  lines.push("");
+
+  const permits = getPermits();
+  if (!permits) {
+    lines.push("(No permit data loaded)");
+  } else {
+    // Reuse the same logic as renderAvailability to describe each field.
+    const soccerFields = [...new Set(permits.map(p => p.Field).filter(f => f && /soccer/i.test(f)))].sort();
+    for (const field of soccerFields) {
+      const here = permits
+        .filter(p => p.Field === field)
+        .map(p => ({ start: parseDateTime(p.Start), end: parseDateTime(p.End), org: p.Organization || p["Event Name"] || "Unknown" }))
+        .filter(p => p.start && p.end && p.start.date === date)
+        .filter(p => p.start.minutes < WIN_END && p.end.minutes > WIN_START)
+        .sort((a, b) => a.start.minutes - b.start.minutes);
+
+      const gaps = [];
+      let cursor = WIN_START;
+      for (const p of here) {
+        const s = Math.max(p.start.minutes, WIN_START);
+        const e = Math.min(p.end.minutes, WIN_END);
+        if (s > cursor) gaps.push([cursor, s]);
+        cursor = Math.max(cursor, e);
+      }
+      if (cursor < WIN_END) gaps.push([cursor, WIN_END]);
+
+      if (!here.length) {
+        lines.push(`${field}: ✅ FREE ${winLabel}`);
+      } else if (!gaps.length) {
+        const who = here.map(p => `${p.org} ${minToLabel(Math.max(p.start.minutes,WIN_START))}–${minToLabel(Math.min(p.end.minutes,WIN_END))}`).join("; ");
+        lines.push(`${field}: ⛔ TAKEN — ${who}`);
+      } else {
+        lines.push(`${field}: 🟡 Partial`);
+        for (const [s, e] of gaps) lines.push(`  ✅ Free ${minToLabel(s)}–${minToLabel(e)}`);
+        for (const p of here) {
+          const s = Math.max(p.start.minutes, WIN_START), e = Math.min(p.end.minutes, WIN_END);
+          lines.push(`  ⛔ ${minToLabel(s)}–${minToLabel(e)} ${p.org}`);
+        }
+      }
+    }
+  }
+  return lines.join("\n");
+}
+
+async function shareToWhatsApp() {
+  const text = buildShareText();
+  if (!text) return;
+  // Try native share first (works on mobile, opens WhatsApp share sheet).
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; } catch { /* user cancelled — fall through */ }
+  }
+  // Fallback: open wa.me link which opens WhatsApp with message pre-filled.
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url, "_blank");
+}
+
+$("share").addEventListener("click", shareToWhatsApp);
+
+$("copy").addEventListener("click", async () => {
+  const text = buildShareText();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = $("copy"); const orig = btn.textContent;
+    btn.textContent = "✅ Copied";
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  } catch {
+    alert("Couldn't copy — select the summary text and copy manually.");
+  }
+});
+
+// ---------- Team randomizer ----------
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let currentTeams = null; // { teamA: [...], teamB: [...] }
+
+function renderTeams() {
+  const raw = $("names").value;
+  const names = raw.split("\n").map(s => s.trim()).filter(Boolean);
+  if (names.length < 2) {
+    $("teams").innerHTML = `<p class="muted" style="margin-top:10px">Add at least 2 players.</p>`;
+    $("reroll").hidden = true;
+    $("shareTeams").hidden = true;
+    currentTeams = null;
+    return;
+  }
+  const shuffled = shuffle(names);
+  const half = Math.ceil(shuffled.length / 2);
+  const teamA = shuffled.slice(0, half);
+  const teamB = shuffled.slice(half);
+  currentTeams = { teamA, teamB };
+  $("teams").innerHTML = `
+    <div class="teams">
+      <div class="team"><h3>Team A (${teamA.length})</h3><ol>${teamA.map(n=>`<li>${n}</li>`).join("")}</ol></div>
+      <div class="team"><h3>Team B (${teamB.length})</h3><ol>${teamB.map(n=>`<li>${n}</li>`).join("")}</ol></div>
+    </div>
+  `;
+  $("reroll").hidden = false;
+  $("shareTeams").hidden = false;
+}
+
+function buildTeamsShareText() {
+  if (!currentTeams) return "";
+  const { teamA, teamB } = currentTeams;
+  const lines = ["⚽ Teams"];
+  lines.push("");
+  lines.push(`Team A (${teamA.length}):`);
+  teamA.forEach((n, i) => lines.push(`  ${i+1}. ${n}`));
+  lines.push("");
+  lines.push(`Team B (${teamB.length}):`);
+  teamB.forEach((n, i) => lines.push(`  ${i+1}. ${n}`));
+  return lines.join("\n");
+}
+
+async function shareTeamsToWhatsApp() {
+  const text = buildTeamsShareText();
+  if (!text) return;
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; } catch { /* fall through */ }
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+}
+
+$("shuffle").addEventListener("click", renderTeams);
+$("reroll").addEventListener("click", renderTeams);
+$("shareTeams").addEventListener("click", shareTeamsToWhatsApp);
+$("names").addEventListener("input", () => {
+  localStorage.setItem(LS_NAMES, $("names").value);
+});
+
+// ---------- init ----------
+(function init() {
+  // Default date = today (local).
+  const now = new Date();
+  const iso = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  $("date").value = iso;
+  $("names").value = localStorage.getItem(LS_NAMES) || "";
+  updateDataStatus();
+  renderAvailability();
+  renderWeather();
+  maybeAutoRefresh();
+})();
+</script>
+</body>
+</html>
