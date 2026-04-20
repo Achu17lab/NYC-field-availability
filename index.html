@@ -1098,8 +1098,23 @@ async function loadFromSupabase() {
       sb.from('games').select('id,data').order('created_at', { ascending: false }),
       sb.from('config').select('value').eq('key','names').maybeSingle()
     ]);
-    if (gData) gamesCache = gData.map(r => r.data);
-    if (nData) { $('names').value = nData.value; localStorage.setItem(LS_NAMES, nData.value); }
+
+    if (gData && gData.length === 0) {
+      // Supabase empty — one-time migration from localStorage
+      const localGames = JSON.parse(localStorage.getItem(LS_GAMES)||'[]');
+      const localNames = localStorage.getItem(LS_NAMES)||'';
+      if (localGames.length > 0) {
+        await sb.from('games').upsert(localGames.map(g=>({id:g.id,data:g})));
+        gamesCache = localGames;
+      }
+      if (localNames) {
+        await sb.from('config').upsert({key:'names',value:localNames});
+        $('names').value = localNames;
+      }
+    } else if (gData) {
+      gamesCache = gData.map(r => r.data);
+      if (nData) { $('names').value = nData.value; localStorage.setItem(LS_NAMES, nData.value); }
+    }
   } catch(e) {
     console.warn('Supabase load failed, falling back to localStorage:', e);
     gamesCache = JSON.parse(localStorage.getItem(LS_GAMES)||'[]');
