@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>DeWitt Clinton Soccer</title>
+<title>Sports Day</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -102,13 +102,25 @@ details[open] summary::before { content: "▼ "; }
 
 .flatpickr-calendar { background: var(--surface) !important; border-color: var(--border) !important; }
 .sortable-ghost { opacity: .35; }
+
+.field-chip { padding:7px 16px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.field-chip.active { background:rgba(34,197,94,.12); color:var(--green); border-color:var(--green); }
+.field-chip:not(.active):hover { border-color: var(--text); color: var(--text); }
+
+.sf-pill { padding:5px 14px; border-radius:20px; border:1px solid transparent; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; background:transparent; }
+.sf-pill.active { background:var(--surface2); color:var(--text); border-color:var(--border); }
+.sf-pill:not(.active) { color:var(--muted); }
+.mo-pill { padding:5px 11px; border-radius:20px; border:1px solid var(--border); font-size:12px; cursor:pointer; transition:all .15s; background:transparent; color:var(--muted); }
+.mo-pill.active { background:var(--green); color:#0a0c0f; border-color:var(--green); font-weight:600; }
+.mo-pill.has-data:not(.active) { color:var(--text); }
+.mo-pill.disabled { opacity:.3; cursor:default; }
 </style>
 </head>
 <body>
 
 <div class="app-header">
-  <h1>🏟️ DeWitt Clinton</h1>
-  <p>Soccer field · West 54th St, NYC</p>
+  <h1>🏆 Sports Day</h1>
+  <p>Your match day companion</p>
 </div>
 
 <nav class="nav">
@@ -119,6 +131,13 @@ details[open] summary::before { content: "▼ "; }
 
 <!-- AVAILABILITY -->
 <div id="tab-avail" class="tab active">
+  <div class="card">
+    <div class="lbl">Field</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="field-chip active" data-field="dewitt" onclick="selectField('dewitt')">🏟️ DeWitt Clinton</button>
+    </div>
+  </div>
+
   <div class="card">
     <div class="lbl">Date</div>
     <input type="text" id="date" placeholder="Select date" readonly style="cursor:pointer; margin-bottom:10px" />
@@ -203,11 +222,24 @@ details[open] summary::before { content: "▼ "; }
 
   <!-- SEASON STATS VIEW -->
   <div id="stab-season-view" style="display:none">
+
+    <!-- Filter bar -->
+    <div style="display:flex;gap:2px;background:var(--surface);border-radius:10px;padding:3px;margin-bottom:10px">
+      <button id="sf-all" class="sf-pill active" style="flex:1" onclick="setStatMode('all')">All time</button>
+      <button id="sf-month" class="sf-pill" style="flex:1" onclick="setStatMode('month')">Monthly</button>
+    </div>
+
+    <!-- Month/year picker (shown in monthly mode) -->
+    <div id="sf-picker" style="display:none;margin-bottom:12px">
+      <div id="sf-year-bar" style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap"></div>
+      <div id="sf-month-bar" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+    </div>
+
     <div id="lbSection" style="display:none">
       <div class="card" style="background:var(--surface2)">
-        <div style="font-size:17px;font-weight:700;margin-bottom:4px">Season stats</div>
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px" id="statsTitle">Season stats</div>
         <div id="statsRange" style="font-size:12px;color:var(--muted);margin-bottom:14px"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div style="background:var(--surface);border-radius:10px;padding:10px;text-align:center">
             <div id="statGames" style="font-size:22px;font-weight:700;color:var(--green)">0</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px">Played</div>
@@ -215,10 +247,6 @@ details[open] summary::before { content: "▼ "; }
           <div style="background:var(--surface);border-radius:10px;padding:10px;text-align:center">
             <div id="statGoals" style="font-size:22px;font-weight:700;color:var(--green)">0</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px">Goals</div>
-          </div>
-          <div style="background:var(--surface);border-radius:10px;padding:10px;text-align:center">
-            <div id="statPlayers" style="font-size:22px;font-weight:700;color:var(--green)">0</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">Players</div>
           </div>
         </div>
       </div>
@@ -240,6 +268,20 @@ details[open] summary::before { content: "▼ "; }
     </div>
   </div>
 
+</div>
+
+<!-- PASSWORD MODAL -->
+<div id="pwModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:200; align-items:center; justify-content:center">
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px; width:300px; max-width:88vw">
+    <div style="font-weight:700; font-size:16px; margin-bottom:4px">🔒 Admin access</div>
+    <div style="font-size:13px; color:var(--muted); margin-bottom:14px">Score and goals are admin-only.</div>
+    <input type="password" id="pwInput" placeholder="Password" style="margin-bottom:8px" onkeydown="if(event.key==='Enter')submitPw()" />
+    <div id="pwError" style="display:none; color:var(--red); font-size:13px; margin-bottom:8px">Wrong password — try again.</div>
+    <div class="row">
+      <button class="btn btn-primary" onclick="submitPw()">Unlock</button>
+      <button class="btn btn-ghost" onclick="closePw()">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- SHARE MODAL -->
@@ -466,7 +508,7 @@ $("modalWa").addEventListener("click", async () => {
 function buildAvailText() {
   const date=$("date").value; if (!date) return "";
   const {WIN_START,WIN_END}=getWindow();
-  const lines=[`🏟️ DeWitt Clinton — ${fmtDate(date)} (${minToLabel(WIN_START)}–${minToLabel(WIN_END)})`];
+  const lines=[`🏆 Sports Day — DeWitt Clinton — ${fmtDate(date)} (${minToLabel(WIN_START)}–${minToLabel(WIN_END)})`];
   if (weatherCache?.date===date) {
     const w=weatherCache.summary;
     lines.push(`${w.icon} ${w.label}, ${w.minC}–${w.maxC}°C / ${w.minF}–${w.maxF}°F, ${w.rainStr}`);
@@ -510,7 +552,7 @@ function shuffle(arr) {
   return a;
 }
 function renderTeams() {
-  const names=$("names").value.split("\n").map(s=>s.trim().replace(/^\d+[\.\)]\s*/,'')).filter(Boolean);
+  const names=$("names").value.split("\n").map(s=>s.trim().replace(/^\d+[.\-)\s:]+/,'').trim()).filter(Boolean);
   if (names.length<2) { $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none"; currentTeams=null; return; }
   const s=shuffle(names), half=Math.ceil(s.length/2);
   currentTeams={teamA:s.slice(0,half),teamB:s.slice(half)};
@@ -523,7 +565,7 @@ function renderTeams() {
 function buildTeamsText() {
   if (!currentTeams) return "";
   const date=$("date").value;
-  const lines=[`⚽ DeWitt Clinton${date?" — "+fmtDate(date):""}`,""];
+  const lines=[`⚽ Sports Day${date?" — "+fmtDate(date):""}`,""];
   lines.push(`Team A (${currentTeams.teamA.length}):`);
   currentTeams.teamA.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
   lines.push("",`Team B (${currentTeams.teamB.length}):`);
@@ -534,6 +576,37 @@ $("shuffle").addEventListener("click", renderTeams);
 $("reroll").addEventListener("click", renderTeams);
 $("shareTeamsBtn").addEventListener("click", () => showModal(buildTeamsText()));
 $("names").addEventListener("input", () => localStorage.setItem(LS_NAMES, $("names").value));
+
+// ── ADMIN AUTH ────────────────────────────────────────────────
+let adminUnlocked = false;
+let _pendingAdminFn = null;
+
+function showPw(fn) {
+  _pendingAdminFn = fn || null;
+  $("pwInput").value = "";
+  $("pwError").style.display = "none";
+  $("pwModal").style.display = "flex";
+  setTimeout(() => $("pwInput").focus(), 50);
+}
+function closePw() {
+  $("pwModal").style.display = "none";
+  _pendingAdminFn = null;
+}
+function submitPw() {
+  if ($("pwInput").value === "Bottlejob") {
+    adminUnlocked = true;
+    $("pwModal").style.display = "none";
+    if (_pendingAdminFn) { const fn = _pendingAdminFn; _pendingAdminFn = null; fn(); }
+  } else {
+    $("pwError").style.display = "";
+    $("pwInput").value = "";
+    $("pwInput").focus();
+  }
+}
+function requireAdmin(fn) {
+  if (adminUnlocked) fn();
+  else showPw(fn);
+}
 
 // ── GAMES ─────────────────────────────────────────────────────
 function getGames() { try { return JSON.parse(localStorage.getItem(LS_GAMES)||"[]"); } catch { return []; } }
@@ -549,8 +622,18 @@ $("lockBtn").addEventListener("click", () => {
   switchTab("stats");
 });
 
+// ── FIELD SELECTOR ────────────────────────────────────────────
+let currentField = 'dewitt';
+function selectField(id) {
+  currentField = id;
+  document.querySelectorAll('.field-chip').forEach(b => b.classList.toggle('active', b.dataset.field === id));
+  renderAvailability();
+}
+
 // ── STATS ─────────────────────────────────────────────────────
 let currentStab = "games";
+let statFilter = { mode: 'all', year: new Date().getFullYear(), month: null };
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 function switchStab(name) {
   currentStab = name;
@@ -560,6 +643,67 @@ function switchStab(name) {
   $("stab-games").style.color       = name === "games"  ? "var(--text)"    : "var(--muted)";
   $("stab-season").style.background = name === "season" ? "var(--surface2)" : "transparent";
   $("stab-season").style.color      = name === "season" ? "var(--text)"    : "var(--muted)";
+  if (name === "season") { updateStatFilterUI(); }
+}
+
+function setStatMode(mode) {
+  statFilter.mode = mode;
+  if (mode === 'month' && !statFilter.month) {
+    statFilter.month = new Date().getMonth() + 1;
+  }
+  updateStatFilterUI();
+  renderStats();
+}
+function setStatYear(year) {
+  statFilter.year = year;
+  statFilter.month = null;
+  updateStatFilterUI();
+  renderStats();
+}
+function setStatMonth(month) {
+  statFilter.month = (statFilter.month === month) ? null : month;
+  updateStatFilterUI();
+  renderStats();
+}
+
+function updateStatFilterUI() {
+  const isMonth = statFilter.mode === 'month';
+  $("sf-all").classList.toggle("active", !isMonth);
+  $("sf-month").classList.toggle("active", isMonth);
+  $("sf-picker").style.display = isMonth ? "" : "none";
+  if (!isMonth) return;
+
+  const games = getGames();
+  // Collect years that appear in game data + current year
+  const dataYears = [...new Set(games.map(g => parseInt(g.date.split('-')[0])))];
+  const curYear = new Date().getFullYear();
+  if (!dataYears.includes(curYear)) dataYears.push(curYear);
+  dataYears.sort();
+
+  $("sf-year-bar").innerHTML = dataYears.map(y => {
+    const active = y === statFilter.year;
+    return `<button onclick="setStatYear(${y})" class="mo-pill ${active?'active':'has-data'}" style="${active?'':'border-color:var(--green);color:var(--green);'}">${y}</button>`;
+  }).join('');
+
+  // Played game dates in selected year
+  const playedThisYear = games.filter(g => g.result && g.date.startsWith(String(statFilter.year)+'-')).map(g => parseInt(g.date.split('-')[1]));
+
+  $("sf-month-bar").innerHTML = MONTH_NAMES.map((name, i) => {
+    const m = i + 1;
+    const hasData = playedThisYear.includes(m);
+    const active = m === statFilter.month;
+    return `<button onclick="setStatMonth(${m})" class="mo-pill ${active?'active':''} ${hasData&&!active?'has-data':''} ${!hasData&&!active?'disabled':''}" ${!hasData&&!active?'disabled':''}>${name}</button>`;
+  }).join('');
+}
+
+function getFilteredPlayed(played) {
+  if (statFilter.mode === 'all') return played;
+  return played.filter(g => {
+    const [y, m] = g.date.split('-').map(Number);
+    if (y !== statFilter.year) return false;
+    if (statFilter.month && m !== statFilter.month) return false;
+    return true;
+  });
 }
 
 function gameCard(g) {
@@ -580,20 +724,22 @@ function gameCard(g) {
 function renderStats() {
   const games = getGames();
 
-  // Split into upcoming vs played (upcoming = no result yet, sort by date asc; played = has result, sort by date desc)
-  const today = new Date().toISOString().slice(0,10);
+  // Games view — always shows all games unfiltered
   const upcoming = games.filter(g => !g.result).sort((a,b) => a.date.localeCompare(b.date));
-  const played   = games.filter(g =>  g.result).sort((a,b) => b.date.localeCompare(a.date));
+  const allPlayed = games.filter(g => g.result).sort((a,b) => b.date.localeCompare(a.date));
 
   $("gamesUpcoming").innerHTML = upcoming.length
     ? upcoming.map(gameCard).join("")
     : `<p style="color:var(--muted);font-size:14px">No upcoming games.</p>`;
 
-  $("gamesPlayed").innerHTML = played.length
-    ? played.map(gameCard).join("")
+  $("gamesPlayed").innerHTML = allPlayed.length
+    ? allPlayed.map(gameCard).join("")
     : `<p style="color:var(--muted);font-size:14px">No played games yet.</p>`;
 
-  // Season stats leaderboard
+  // Season stats leaderboard — uses filtered played games
+  updateStatFilterUI();
+  const played = getFilteredPlayed(allPlayed);
+
   const stats={};
   const ensure=p=>{ if(!stats[p]) stats[p]={goals:0,assists:0,wins:0,losses:0}; };
   for (const g of played) {
@@ -610,7 +756,7 @@ function renderStats() {
     });
   }
 
-  if (!played.length) {
+  if (!allPlayed.length) {
     $("lbSection").style.display="none";
     $("lbEmpty").style.display="";
     return;
@@ -618,12 +764,22 @@ function renderStats() {
   $("lbSection").style.display="";
   $("lbEmpty").style.display="none";
 
-  const allDates=games.map(g=>g.date).sort();
-  const first=fmtDate(allDates[0]), last=fmtDate(allDates[allDates.length-1]);
-  $("statsRange").textContent = allDates.length>1 ? `${first} – ${last}` : first;
-  $("statGames").textContent  = played.length;
-  $("statGoals").textContent  = played.reduce((s,g)=>(g.result?.goals?.length||0)+s, 0);
-  $("statPlayers").textContent = new Set(games.flatMap(g=>[...g.teamA,...g.teamB])).size;
+  // Title & range reflect the active filter
+  if (statFilter.mode === 'month' && statFilter.month) {
+    $("statsTitle").textContent = `${MONTH_NAMES[statFilter.month-1]} ${statFilter.year}`;
+    $("statsRange").textContent = played.length ? `${played.length} game${played.length>1?'s':''} this month` : 'No games this month';
+  } else if (statFilter.mode === 'month') {
+    $("statsTitle").textContent = String(statFilter.year);
+    $("statsRange").textContent = played.length ? `${played.length} game${played.length>1?'s':''} in ${statFilter.year}` : `No games in ${statFilter.year}`;
+  } else {
+    $("statsTitle").textContent = 'Season stats';
+    const allDates=allPlayed.map(g=>g.date).sort();
+    const first=fmtDate(allDates[0]), last=fmtDate(allDates[allDates.length-1]);
+    $("statsRange").textContent = allDates.length>1 ? `${first} – ${last}` : first;
+  }
+
+  $("statGames").textContent = played.length;
+  $("statGoals").textContent = played.reduce((s,g)=>(g.result?.goals?.length||0)+s, 0);
 
   const entries=Object.entries(stats);
   const lbRow=([name,s],i,key)=>`<div class="lb-row"><div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-val">${key==="wl"?`${s.wins}W–${s.losses}L`:s[key]}</div></div>`;
@@ -637,9 +793,12 @@ function renderGameBody(g) {
   const all=[...g.teamA,...g.teamB];
   const opts=all.map(p=>`<option value="${p}">${p}</option>`).join("");
   const goalsHtml=(g.result?.goals||[]).map((ev,i)=>`
-    <div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:13px;border-bottom:1px solid var(--border)">
+    <div id="goal-row-${g.id}-${i}" style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:13px;border-bottom:1px solid var(--border)">
       <span>⚽ <strong>${ev.player}</strong> (Team ${ev.team})${ev.assist?` <span style="color:var(--muted)">🎯 ${ev.assist}</span>`:""}</span>
-      <button onclick="removeGoal('${g.id}',${i})" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer">✕</button>
+      <div style="display:flex;gap:4px;margin-left:auto;flex-shrink:0">
+        <button onclick="startEditGoal('${g.id}',${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;line-height:1" title="Edit">✏️</button>
+        <button onclick="removeGoal('${g.id}',${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;line-height:1">✕</button>
+      </div>
     </div>`).join("")||`<p style="color:var(--muted);font-size:13px;padding:4px 0">No goals recorded.</p>`;
 
   return `<div style="padding-top:12px">
@@ -653,7 +812,7 @@ function renderGameBody(g) {
         <div style="color:var(--muted);margin-bottom:6px">Team A</div>
         <div id="sort-A-${g.id}" data-game="${g.id}" data-team="A"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:grab;user-select:none">${p}</span>`).join("")}
+          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px">${p}<button onclick="editPlayerName('${g.id}','A','${p}')" style="background:none;border:none;color:inherit;opacity:.4;cursor:pointer;font-size:9px;padding:0 1px;line-height:1;flex-shrink:0" title="Edit name">✏</button><button class="remove-player" onclick="removePlayer('${g.id}','A','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:10px;padding:0;line-height:1;flex-shrink:0">✕</button></span>`).join("")}
         </div>
         <div style="display:flex;gap:6px"><input id="addA-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','A')">+</button></div>
       </div>
@@ -661,19 +820,19 @@ function renderGameBody(g) {
         <div style="color:var(--muted);margin-bottom:6px">Team B</div>
         <div id="sort-B-${g.id}" data-game="${g.id}" data-team="B"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:grab;user-select:none">${p}</span>`).join("")}
+          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px">${p}<button onclick="editPlayerName('${g.id}','B','${p}')" style="background:none;border:none;color:inherit;opacity:.4;cursor:pointer;font-size:9px;padding:0 1px;line-height:1;flex-shrink:0" title="Edit name">✏</button><button class="remove-player" onclick="removePlayer('${g.id}','B','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:10px;padding:0;line-height:1;flex-shrink:0">✕</button></span>`).join("")}
         </div>
         <div style="display:flex;gap:6px"><input id="addB-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','B')">+</button></div>
       </div>
     </div>
-    <div class="lbl">Score</div>
+    <div class="lbl">Score <span class="tag">🔒 admin</span></div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
       <input type="number" min="0" id="scoreA-${g.id}" value="${g.result?.scoreA??""}" placeholder="A" style="width:64px;text-align:center;font-size:20px;font-weight:700"/>
       <span style="color:var(--muted);font-size:18px">–</span>
       <input type="number" min="0" id="scoreB-${g.id}" value="${g.result?.scoreB??""}" placeholder="B" style="width:64px;text-align:center;font-size:20px;font-weight:700"/>
       <button class="btn btn-ghost btn-sm" onclick="saveScore('${g.id}')">Save</button>
     </div>
-    <div class="lbl">Goals & assists</div>
+    <div class="lbl">Goals & assists <span class="tag">🔒 admin</span></div>
     <div style="margin-bottom:10px">${goalsHtml}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
       <select id="gPlayer-${g.id}" style="flex:2;font-size:13px;padding:7px"><option value="">Scorer…</option>${opts}</select>
@@ -717,38 +876,110 @@ function saveTeamOrder(gameId) {
   g.teamA = [...elA.querySelectorAll('[data-player]')].map(e => e.dataset.player);
   g.teamB = [...elB.querySelectorAll('[data-player]')].map(e => e.dataset.player);
   // Re-colour badges to match their new team
-  elA.querySelectorAll('[data-player]').forEach(e => { e.className = 'badge badge-green'; e.style.cursor='grab'; e.style.userSelect='none'; });
-  elB.querySelectorAll('[data-player]').forEach(e => { e.className = 'badge badge-yellow'; e.style.cursor='grab'; e.style.userSelect='none'; });
+  elA.querySelectorAll('[data-player]').forEach(e => { e.className='badge badge-green'; e.style.cssText='cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px'; });
+  elB.querySelectorAll('[data-player]').forEach(e => { e.className='badge badge-yellow'; e.style.cssText='cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px'; });
   saveGames(games);
 }
 
 function saveScore(id) {
-  const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
-  const a=parseInt($(`scoreA-${id}`).value,10), b=parseInt($(`scoreB-${id}`).value,10);
-  if(isNaN(a)||isNaN(b)) return;
-  if(!g.result) g.result={scoreA:a,scoreB:b,goals:[]};
-  else { g.result.scoreA=a; g.result.scoreB=b; }
-  saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+  requireAdmin(() => {
+    const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
+    const a=parseInt($(`scoreA-${id}`).value,10), b=parseInt($(`scoreB-${id}`).value,10);
+    if(isNaN(a)||isNaN(b)) return;
+    if(!g.result) g.result={scoreA:a,scoreB:b,goals:[]};
+    else { g.result.scoreA=a; g.result.scoreB=b; }
+    saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+  });
 }
 
 function addGoal(id) {
-  const player=$(`gPlayer-${id}`).value, team=$(`gTeam-${id}`).value, assist=$(`gAssist-${id}`).value||null;
-  if(!player) return;
-  const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
-  if(!g.result) g.result={scoreA:0,scoreB:0,goals:[]};
-  g.result.goals.push({player,team,assist});
-  if(team==="A") g.result.scoreA=(g.result.scoreA||0)+1;
-  else g.result.scoreB=(g.result.scoreB||0)+1;
-  saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+  requireAdmin(() => {
+    const player=$(`gPlayer-${id}`).value, team=$(`gTeam-${id}`).value, assist=$(`gAssist-${id}`).value||null;
+    if(!player) return;
+    const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
+    if(!g.result) g.result={scoreA:0,scoreB:0,goals:[]};
+    g.result.goals.push({player,team,assist});
+    saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+  });
 }
 
 function removeGoal(id,idx) {
-  const games=getGames(), g=games.find(x=>x.id===id); if(!g?.result?.goals) return;
-  const ev=g.result.goals[idx];
-  if(ev.team==="A") g.result.scoreA=Math.max(0,(g.result.scoreA||1)-1);
-  else g.result.scoreB=Math.max(0,(g.result.scoreB||1)-1);
-  g.result.goals.splice(idx,1);
+  requireAdmin(() => {
+    const games=getGames(), g=games.find(x=>x.id===id); if(!g?.result?.goals) return;
+    g.result.goals.splice(idx,1);
+    saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+  });
+}
+
+function removePlayer(id, team, player) {
+  const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
+  if(team==="A") g.teamA=g.teamA.filter(p=>p!==player);
+  else g.teamB=g.teamB.filter(p=>p!==player);
   saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+}
+
+function startEditGoal(gameId, idx) {
+  requireAdmin(() => {
+    const games=getGames(), g=games.find(x=>x.id===gameId);
+    if (!g?.result?.goals?.[idx]) return;
+    const ev=g.result.goals[idx];
+    const all=[...g.teamA,...g.teamB];
+    const opts=all.map(p=>`<option value="${p}" ${p===ev.player?'selected':''}>${p}</option>`).join('');
+    const assistOpts=`<option value="" ${!ev.assist?'selected':''}>No assist</option>`+all.map(p=>`<option value="${p}" ${p===ev.assist?'selected':''}>${p}</option>`).join('');
+    const sel='font-size:12px;padding:4px 6px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text)';
+    const row=$(`goal-row-${gameId}-${idx}`); if(!row) return;
+    row.innerHTML=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:2px 0">
+      <select id="eg-player-${gameId}-${idx}" style="${sel}">${opts}</select>
+      <select id="eg-team-${gameId}-${idx}" style="${sel}">
+        <option value="A" ${ev.team==='A'?'selected':''}>Team A</option>
+        <option value="B" ${ev.team==='B'?'selected':''}>Team B</option>
+      </select>
+      <select id="eg-assist-${gameId}-${idx}" style="${sel}">${assistOpts}</select>
+      <button onclick="saveEditGoal('${gameId}',${idx})" class="btn btn-ghost btn-sm">✓ Save</button>
+      <button onclick="renderStats();$('gb-${gameId}').classList.add('open')" class="btn btn-ghost btn-sm">Cancel</button>
+    </div>`;
+  });
+}
+
+function saveEditGoal(gameId, idx) {
+  const games=getGames(), g=games.find(x=>x.id===gameId);
+  if (!g?.result?.goals?.[idx]) return;
+  g.result.goals[idx]={
+    player: $(`eg-player-${gameId}-${idx}`).value,
+    team:   $(`eg-team-${gameId}-${idx}`).value,
+    assist: $(`eg-assist-${gameId}-${idx}`).value||null,
+  };
+  saveGames(games); renderStats(); $(`gb-${gameId}`).classList.add("open");
+}
+
+function editPlayerName(id, team, oldName) {
+  const container=$(`sort-${team}-${id}`); if(!container) return;
+  const badge=[...container.querySelectorAll('[data-player]')].find(el=>el.dataset.player===oldName);
+  if(!badge) return;
+  const inp=document.createElement('input');
+  inp.value=oldName;
+  inp.style.cssText='font-size:12px;padding:3px 6px;width:90px;border-radius:6px;background:var(--surface);border:1px solid var(--green);color:var(--text);outline:none;';
+  badge.replaceWith(inp);
+  inp.focus(); inp.select();
+  let saved=false;
+  const save=()=>{
+    if(saved) return; saved=true;
+    const newName=inp.value.trim();
+    if(!newName||newName===oldName){renderStats();$(`gb-${id}`).classList.add("open");return;}
+    const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
+    const arr=team==='A'?g.teamA:g.teamB;
+    const i=arr.indexOf(oldName); if(i!==-1) arr[i]=newName;
+    (g.result?.goals||[]).forEach(ev=>{
+      if(ev.player===oldName) ev.player=newName;
+      if(ev.assist===oldName) ev.assist=newName;
+    });
+    saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+  };
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();save();}
+    if(e.key==='Escape'){saved=true;renderStats();$(`gb-${id}`).classList.add("open");}
+  });
 }
 
 function addPlayer(id,team) {
@@ -777,7 +1008,7 @@ function deleteGame(id) {
 
 function shareGame(id) {
   const g=getGames().find(x=>x.id===id); if(!g) return;
-  const lines=[`⚽ DeWitt Clinton — ${fmtDate(g.date)}`];
+  const lines=[`⚽ Sports Day — ${fmtDate(g.date)}`];
   if(g.result) lines.push(`Final: Team A ${g.result.scoreA} – ${g.result.scoreB} Team B`);
   lines.push("",`Team A: ${g.teamA.join(", ")}`,`Team B: ${g.teamB.join(", ")}`);
   if(g.result?.goals?.length) {
