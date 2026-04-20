@@ -301,7 +301,7 @@ function renderAvailability() {
 
     let statusHtml, bodyHtml = "";
     if (!permitsHere.length) {
-      statusHtml = `<span class="status-free">FREE all morning</span>`;
+      statusHtml = `<span class="status-free">FREE ${minToLabel(WIN_START)} – ${minToLabel(WIN_END)}</span>`;
     } else if (gaps.length === 0) {
       statusHtml = `<span class="status-taken">TAKEN</span>`;
     } else {
@@ -453,14 +453,45 @@ const cToF = (c) => (c * 9/5) + 32;
 
 let weatherCache = null; // { date, data }
 
+// Pick the right Open-Meteo endpoint for the date:
+// - past dates → archive (actual historical weather)
+// - next 15 days → forecast (real forecast)
+// - further future → archive for SAME date last year (typical-weather estimate)
 async function fetchWeather(date) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const picked = new Date(date + "T00:00");
+  const diffDays = Math.round((picked - today) / 86400000);
+
+  if (diffDays < 0) {
+    return { mode: "historical", date, ...(await callArchive(date)) };
+  }
+  if (diffDays <= 15) {
+    return { mode: "forecast", date, ...(await callForecast(date)) };
+  }
+  // Far future → use same calendar date from 1 year ago as a "typical" estimate.
+  const y = picked.getFullYear() - 1;
+  const sub = `${y}-${String(picked.getMonth()+1).padStart(2,"0")}-${String(picked.getDate()).padStart(2,"0")}`;
+  return { mode: "typical", date: sub, ...(await callArchive(sub)) };
+}
+
+async function callForecast(date) {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
     `&hourly=temperature_2m,weather_code,precipitation_probability` +
     `&temperature_unit=celsius&timezone=America%2FNew_York` +
     `&start_date=${date}&end_date=${date}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("weather fetch failed");
-  return res.json();
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("forecast fetch failed");
+  return r.json();
+}
+
+async function callArchive(date) {
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${LAT}&longitude=${LON}` +
+    `&hourly=temperature_2m,weather_code,precipitation` +
+    `&temperature_unit=celsius&timezone=America%2FNew_York` +
+    `&start_date=${date}&end_date=${date}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("archive fetch failed");
+  return r.json();
 }
 
 async function renderWeather() {
@@ -468,20 +499,15 @@ async function renderWeather() {
   const date = $("date").value;
   if (!date) { el.innerHTML = ""; return; }
 
-  // Check forecast range (~16 days from today)
-  const today = new Date(); today.setHours(0,0,0,0);
-  const picked = new Date(date + "T00:00");
-  const diffDays = Math.round((picked - today) / 86400000);
-  if (diffDays < 0) { el.innerHTML = `<div class="weather"><span class="icon">🕰️</span><span class="detail">Past date — no weather shown</span></div>`; return; }
-  if (diffDays > 15) { el.innerHTML = `<div class="weather"><span class="icon">🔮</span><span class="detail">Too far out for a forecast (>15 days)</span></div>`; return; }
-
   el.innerHTML = `<div class="weather"><span class="icon">⏳</span><span class="detail">Loading weather…</span></div>`;
   try {
     const data = await fetchWeather(date);
-    const times = data.hourly.time;          // ["2026-04-20T00:00", ...]
+    const times = data.hourly.time;
     const temps = data.hourly.temperature_2m;
     const codes = data.hourly.weather_code;
-    const precip = data.hourly.precipitation_probability;
+    // Archive uses `precipitation` (mm); forecast uses `precipitation_probability` (%).
+    const isForecast = data.mode === "forecast";
+    const precipSeries = isForecast ? data.hourly.precipitation_probability : data.hourly.precipitation;
 
     const { WIN_START, WIN_END } = getWindow();
     const startHour = Math.floor(WIN_START / 60);
@@ -494,9 +520,7 @@ async function renderWeather() {
     if (!idxs.length) { el.innerHTML = ""; return; }
     const minC = Math.min(...idxs.map(i => temps[i]));
     const maxC = Math.max(...idxs.map(i => temps[i]));
-    // Pick the most common weather code in morning hours (or worst: prefer rain/snow over clear)
     const code = idxs.map(i => codes[i]).sort((a,b) => b - a)[0];
-    const rainPct = Math.max(...idxs.map(i => precip[i] ?? 0));
     const { icon, label } = weatherFromCode(code);
 
     const minF = Math.round(cToF(minC));
@@ -504,15 +528,28 @@ async function renderWeather() {
     const minCr = Math.round(minC);
     const maxCr = Math.round(maxC);
 
-    weatherCache = { date, summary: { icon, label, minC: minCr, maxC: maxCr, minF, maxF, rainPct } };
+    let rainStr;
+    if (isForecast) {
+      const pct = Math.max(...idxs.map(i => precipSeries[i] ?? 0));
+      rainStr = `Rain chance: ${pct}%`;
+    } else {
+      const mm = idxs.reduce((s, i) => s + (precipSeries[i] ?? 0), 0);
+      rainStr = mm > 0.1 ? `Precipitation: ${mm.toFixed(1)} mm` : "No rain";
+    }
+
+    const modeTag =
+      data.mode === "historical" ? `<span class="tag">actual</span>` :
+      data.mode === "typical"    ? `<span class="tag">typical (${data.date.slice(0,4)})</span>` : "";
+
+    weatherCache = { date, summary: { icon, label, minC: minCr, maxC: maxCr, minF, maxF, rainStr, mode: data.mode } };
     renderSummary();
 
     el.innerHTML = `
       <div class="weather">
         <span class="icon">${icon}</span>
         <div>
-          <div class="main">${label} — ${minCr}–${maxCr}°C / ${minF}–${maxF}°F</div>
-          <div class="detail">Rain chance: ${rainPct}% (${minToLabel(WIN_START)}–${minToLabel(WIN_END)})</div>
+          <div class="main">${label} — ${minCr}–${maxCr}°C / ${minF}–${maxF}°F ${modeTag}</div>
+          <div class="detail">${rainStr} (${minToLabel(WIN_START)}–${minToLabel(WIN_END)})</div>
         </div>
       </div>`;
   } catch (e) {
@@ -533,7 +570,8 @@ function buildShareText() {
 
   if (weatherCache && weatherCache.date === date) {
     const w = weatherCache.summary;
-    lines.push(`${w.icon} ${w.label}, ${w.minC}–${w.maxC}°C / ${w.minF}–${w.maxF}°F, ${w.rainPct}% rain`);
+    const modeNote = w.mode === "historical" ? " (actual)" : w.mode === "typical" ? " (typical)" : "";
+    lines.push(`${w.icon} ${w.label}${modeNote}, ${w.minC}–${w.maxC}°C / ${w.minF}–${w.maxF}°F, ${w.rainStr}`);
   }
   lines.push("");
 
