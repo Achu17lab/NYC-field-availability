@@ -263,18 +263,18 @@ function renderAvailability() {
 
   const { WIN_START, WIN_END } = getWindow();
 
-  // Soccer fields only. Collect all soccer fields seen in the data.
-  const soccerFields = [...new Set(
-    permits.map(p => p.Field).filter(f => f && /soccer/i.test(f))
+  // All fields from the CSV, listed as-is.
+  const allFields = [...new Set(
+    permits.map(p => p.Field).filter(Boolean)
   )].sort();
 
-  if (!soccerFields.length) {
-    out.innerHTML = `<p class="muted">No soccer fields found in the loaded data.</p>`;
+  if (!allFields.length) {
+    out.innerHTML = `<p class="muted">No fields found in the loaded data.</p>`;
     return;
   }
 
   const parts = [];
-  for (const field of soccerFields) {
+  for (const field of allFields) {
     // Permits for this field on this date that overlap the morning window.
     const permitsHere = permits
       .filter(p => p.Field === field)
@@ -580,8 +580,8 @@ function buildShareText() {
     lines.push("(No permit data loaded)");
   } else {
     // Reuse the same logic as renderAvailability to describe each field.
-    const soccerFields = [...new Set(permits.map(p => p.Field).filter(f => f && /soccer/i.test(f)))].sort();
-    for (const field of soccerFields) {
+    const allFields = [...new Set(permits.map(p => p.Field).filter(Boolean))].sort();
+    for (const field of allFields) {
       const here = permits
         .filter(p => p.Field === field)
         .map(p => ({ start: parseDateTime(p.Start), end: parseDateTime(p.End), org: p.Organization || p["Event Name"] || "Unknown" }))
