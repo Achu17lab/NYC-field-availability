@@ -1,35 +1,52 @@
 <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
   <defs>
     <linearGradient id="ring-outer" x1="20%" y1="5%" x2="80%" y2="95%">
-      <stop offset="0%"   stop-color="#f2f2f2"/>
-      <stop offset="20%"  stop-color="#d8d8d8"/>
+      <stop offset="0%"   stop-color="#f4f4f4"/>
+      <stop offset="25%"  stop-color="#d4d4d4"/>
       <stop offset="55%"  stop-color="#a8a8a8"/>
-      <stop offset="80%"  stop-color="#c8c8c8"/>
+      <stop offset="80%"  stop-color="#cccccc"/>
       <stop offset="100%" stop-color="#909090"/>
     </linearGradient>
     <linearGradient id="ring-mid" x1="20%" y1="5%" x2="80%" y2="95%">
       <stop offset="0%"   stop-color="#f8f8f8"/>
-      <stop offset="100%" stop-color="#d8d8d8"/>
+      <stop offset="100%" stop-color="#dcdcdc"/>
     </linearGradient>
+    <clipPath id="clip">
+      <circle cx="100" cy="100" r="83"/>
+    </clipPath>
   </defs>
 
-  <!-- Metallic outer ring -->
+  <!-- Metallic ring -->
   <circle cx="100" cy="100" r="99" fill="url(#ring-outer)"/>
   <circle cx="100" cy="100" r="89" fill="url(#ring-mid)"/>
-  <!-- White interior -->
-  <circle cx="100" cy="100" r="84" fill="white"/>
+  <circle cx="100" cy="100" r="83" fill="white"/>
 
-  <!-- EA-style mark: outer pentagon pointing right -->
-  <polygon points="48,34 118,34 160,68 118,102 48,102" fill="#d42b2b"/>
+  <!-- EA mark — clipped to inner circle -->
+  <g clip-path="url(#clip)">
+    <g transform="translate(45,28)" fill="#d42b2b">
 
-  <!-- White cutout reaches ALL THE WAY to left edge — creates two separate bars -->
-  <polygon points="46,57 118,57 160,68 118,79 46,79" fill="white"/>
+      <!-- ── A: two diagonal legs meeting at peak ── -->
+      <!-- Left leg -->
+      <polygon points="62,0 78,0 32,92 16,92"/>
+      <!-- Right leg -->
+      <polygon points="78,0 94,0 122,92 106,92"/>
+
+      <!-- ── E: three horizontal bars overlaid on left side ── -->
+      <!-- Top bar — right edge follows inner edge of A left leg -->
+      <polygon points="0,11 73,11 73,28 0,28"/>
+      <!-- Middle bar — extends across to cover A crossbar -->
+      <polygon points="0,45 92,45 95,60 0,60"/>
+      <!-- Bottom bar -->
+      <polygon points="0,74 73,74 73,92 0,92"/>
+
+    </g>
+  </g>
 
   <!-- SPORTS -->
   <text x="100" y="143"
         text-anchor="middle"
         font-family="'Arial Black','Helvetica Neue',Arial,sans-serif"
-        font-size="20"
+        font-size="21"
         font-weight="900"
         fill="#1a2560"
         letter-spacing="3">SPORTS</text>
