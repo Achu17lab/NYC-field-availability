@@ -742,7 +742,10 @@ function renderStats() {
   const stats={};
   const ensure=p=>{ if(!stats[p]) stats[p]={goals:0,assists:0,wins:0,losses:0}; };
   for (const g of played) {
-    const winner=g.result.scoreA>g.result.scoreB?"A":g.result.scoreB>g.result.scoreA?"B":null;
+    // Derive winner from goal counts (independent of the saved scoreline)
+    const goalsA=(g.result.goals||[]).filter(ev=>ev.team==="A").length;
+    const goalsB=(g.result.goals||[]).filter(ev=>ev.team==="B").length;
+    const winner=goalsA>goalsB?"A":goalsB>goalsA?"B":null;
     [...g.teamA,...g.teamB].forEach(p=>{
       ensure(p);
       if (winner==="A"&&g.teamA.includes(p)) stats[p].wins++;
