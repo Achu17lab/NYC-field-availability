@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>DeWitt Clinton Soccer</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
   :root {
     --bg: #0f1115;
@@ -100,6 +103,8 @@
   .weather .icon { font-size: 22px; }
   .weather .main { font-weight: 600; }
   .weather .detail { color: var(--muted); font-size: 13px; }
+  .flatpickr-calendar.inline { background: #0b0d12; border: 1px solid var(--border); margin-top: 6px; }
+  .flatpickr-input { display: none !important; }
   .summary {
     background: #0b0d12;
     border: 1px solid var(--border);
@@ -374,10 +379,25 @@ $("date").addEventListener("change", () => { renderAvailability(); renderWeather
 $("timeStart").addEventListener("change", () => { renderAvailability(); renderWeather(); });
 $("timeEnd").addEventListener("change", () => { renderAvailability(); renderWeather(); });
 
-// ---------- Auto-fetch CSV via CORS proxy ----------
-// NYC Parks blocks browser fetches (CORS). We route through a public CORS proxy.
-const CSV_URL = "https://www.nycgovparks.org/permits/field-and-court/issued/M022/csv";
-const PROXY_URL = (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`;
+// ---------- Auto-fetch CSV ----------
+// Primary: our own /api/permits serverless function (on Vercel).
+// Fallback: public CORS proxy, for local-file / GitHub Pages use.
+const OWN_API = "/api/permits";
+const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent("https://www.nycgovparks.org/permits/field-and-court/issued/M022/csv")}`;
+
+async function fetchCsvText() {
+  // Try our API first (works on Vercel). If it 404s (e.g. GitHub Pages / localhost), fall back to public proxy.
+  try {
+    const r = await fetch(OWN_API);
+    if (r.ok) {
+      const text = await r.text();
+      if (text.includes("Start") && text.includes("Field")) return text;
+    }
+  } catch {}
+  const r2 = await fetch(PROXY_URL);
+  if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+  return r2.text();
+}
 
 async function refreshCsvFromNetwork({ silent } = {}) {
   const btn = $("refreshCsv");
@@ -385,9 +405,7 @@ async function refreshCsvFromNetwork({ silent } = {}) {
   btn.disabled = true;
   btn.textContent = "Fetching…";
   try {
-    const res = await fetch(PROXY_URL(CSV_URL));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
+    const text = await fetchCsvText();
     if (!text.includes("Start") || !text.includes("Field")) throw new Error("Response didn't look like the expected CSV");
     localStorage.setItem(LS_CSV, text);
     localStorage.setItem(LS_CSV + "_ts", String(Date.now()));
@@ -657,10 +675,22 @@ $("names").addEventListener("input", () => {
 
 // ---------- init ----------
 (function init() {
-  // Default date = today (local).
   const now = new Date();
   const iso = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   $("date").value = iso;
+
+  // Inline calendar via flatpickr — always visible, consistent across browsers.
+  flatpickr("#date", {
+    inline: true,
+    defaultDate: iso,
+    dateFormat: "Y-m-d",
+    onChange: (_, dateStr) => {
+      $("date").value = dateStr;
+      renderAvailability();
+      renderWeather();
+    },
+  });
+
   $("names").value = localStorage.getItem(LS_NAMES) || "";
   updateDataStatus();
   renderAvailability();
