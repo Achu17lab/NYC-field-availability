@@ -8,736 +8,708 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
-  :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --border: #2a2f3a;
-    --text: #e8ebf0;
-    --muted: #8a93a4;
-    --accent: #4ade80;
-    --danger: #f87171;
-    --warn: #fbbf24;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.5;
-  }
-  .wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 60px; }
-  h1 { margin: 0 0 4px; font-size: 22px; }
-  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
-  section {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-  h2 { margin: 0 0 12px; font-size: 16px; }
-  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-  input[type=date], input[type=text], textarea, button {
-    font: inherit;
-    color: var(--text);
-    background: #0b0d12;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    width: 100%;
-  }
-  textarea { resize: vertical; min-height: 120px; font-family: ui-monospace, monospace; font-size: 14px; }
-  button {
-    cursor: pointer;
-    background: var(--accent);
-    color: #0b0d12;
-    border: none;
-    font-weight: 600;
-  }
-  button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
-  button:hover { filter: brightness(1.08); }
-  .row { display: flex; gap: 8px; }
-  .row > * { flex: 1; }
-  .field-block { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
-  .field-block:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
-  .field-name { font-weight: 600; margin-bottom: 6px; }
-  .status-free { color: var(--accent); font-weight: 600; }
-  .status-partial { color: var(--warn); font-weight: 600; }
-  .status-taken { color: var(--danger); font-weight: 600; }
-  .slot { font-size: 14px; margin: 4px 0; }
-  .slot .who { color: var(--muted); }
-  .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-  .team {
-    background: #0b0d12;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-  }
-  .team h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
-  .team ol { margin: 0; padding-left: 20px; }
-  .team li { padding: 2px 0; }
-  .muted { color: var(--muted); font-size: 13px; }
-  .tag {
-    display: inline-block;
-    font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: #252a36;
-    color: var(--muted);
-    margin-left: 6px;
-  }
-  details { margin-top: 8px; }
-  summary { cursor: pointer; color: var(--muted); font-size: 13px; }
-  .actions { display: flex; gap: 8px; margin-top: 10px; }
-  .weather {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #0b0d12;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 14px;
-  }
-  .weather .icon { font-size: 22px; }
-  .weather .main { font-weight: 600; }
-  .weather .detail { color: var(--muted); font-size: 13px; }
-  .flatpickr-calendar { background: #0b0d12; border: 1px solid var(--border); }
-  .summary {
-    background: #0b0d12;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    margin-top: 14px;
-    font-family: ui-monospace, monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    color: var(--text);
-  }
+:root {
+  --bg: #0a0c0f;
+  --surface: #12151c;
+  --surface2: #1a1f2a;
+  --border: #222836;
+  --text: #e8ecf0;
+  --muted: #6b7585;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.app-header { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
+.app-header h1 { font-size: 19px; font-weight: 700; }
+.app-header p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+.nav { display: flex; gap: 2px; background: var(--surface); padding: 4px; border-radius: 12px; margin: 0 16px 4px; max-width: 608px; margin-left: auto; margin-right: auto; }
+.nav button { flex: 1; padding: 8px; border: none; border-radius: 9px; background: transparent; color: var(--muted); font-size: 14px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.nav button.active { background: var(--surface2); color: var(--text); }
+
+.tab { display: none; padding: 12px 16px 60px; max-width: 640px; margin: 0 auto; }
+.tab.active { display: block; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+.lbl { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+
+input, textarea, select { font: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; width: 100%; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--green); }
+textarea { resize: vertical; min-height: 100px; font-family: ui-monospace, monospace; font-size: 13px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: inherit; font-weight: 600; font-size: 14px; padding: 10px 16px; border-radius: 9px; border: none; cursor: pointer; transition: all .15s; white-space: nowrap; }
+.btn-primary { background: var(--green); color: #0a0c0f; }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: #fff; }
+.btn-sm { font-size: 13px; padding: 7px 12px; }
+.btn-block { width: 100%; }
+.btn-danger { color: var(--red); border-color: var(--red); background: transparent; }
+
+.row { display: flex; gap: 8px; }
+.row > * { flex: 1; }
+
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+.badge-green { background: rgba(34,197,94,.12); color: var(--green); }
+.badge-yellow { background: rgba(245,158,11,.12); color: var(--yellow); }
+.badge-red { background: rgba(239,68,68,.12); color: var(--red); }
+.badge-muted { background: var(--surface2); color: var(--muted); }
+
+.weather-chip { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
+.weather-chip .icon { font-size: 22px; }
+
+.slot-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+.slot-row:last-child { border-bottom: none; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot-green { background: var(--green); }
+.dot-red { background: var(--red); }
+.slot-time { font-weight: 500; min-width: 155px; }
+.slot-who { color: var(--muted); flex: 1; }
+
+.teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.team-card { background: var(--surface2); border-radius: 10px; padding: 12px; }
+.team-card h4 { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
+.team-card ol { padding-left: 18px; }
+.team-card li { padding: 3px 0; font-size: 14px; }
+
+.game-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+.game-header { display: flex; align-items: center; gap: 10px; padding: 13px 14px; cursor: pointer; user-select: none; }
+.game-score { font-weight: 700; font-size: 16px; }
+.game-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.game-body { padding: 0 14px 14px; border-top: 1px solid var(--border); display: none; }
+.game-body.open { display: block; }
+
+.lb-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.lb-row:last-child { border-bottom: none; }
+.lb-rank { font-size: 13px; color: var(--muted); width: 22px; text-align: right; }
+.lb-name { flex: 1; font-weight: 500; }
+.lb-val { font-size: 15px; font-weight: 700; color: var(--green); }
+
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
+.modal { background: var(--surface); border-radius: 18px 18px 0 0; padding: 20px; width: 100%; max-width: 640px; max-height: 75vh; overflow-y: auto; }
+.modal pre { background: var(--surface2); border-radius: 10px; padding: 14px; font-size: 13px; white-space: pre-wrap; line-height: 1.6; margin: 12px 0; font-family: ui-monospace, monospace; }
+
+.wa-svg { display: block; }
+.tag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--surface2); color: var(--muted); margin-left: 5px; vertical-align: middle; }
+
+details summary { cursor: pointer; color: var(--muted); font-size: 13px; list-style: none; }
+details summary::before { content: "▶ "; font-size: 10px; }
+details[open] summary::before { content: "▼ "; }
+
+.flatpickr-calendar { background: var(--surface) !important; border-color: var(--border) !important; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>DeWitt Clinton Soccer</h1>
-  <p class="sub">Field availability, weather &amp; team picker</p>
 
-  <section>
-    <h2>1. Check availability</h2>
-    <label for="date">Date</label>
-    <input type="date" id="date" />
-    <div class="row" style="margin-top:10px">
-      <div>
-        <label for="timeStart">From</label>
-        <input type="time" id="timeStart" value="07:30" />
-      </div>
-      <div>
-        <label for="timeEnd">To</label>
-        <input type="time" id="timeEnd" value="10:30" />
+<div class="app-header">
+  <h1>🏟️ DeWitt Clinton</h1>
+  <p>Soccer field · West 54th St, NYC</p>
+</div>
+
+<nav class="nav">
+  <button class="active" onclick="switchTab('avail')">Availability</button>
+  <button onclick="switchTab('teams')">Teams</button>
+  <button onclick="switchTab('stats')">Stats</button>
+</nav>
+
+<!-- AVAILABILITY -->
+<div id="tab-avail" class="tab active">
+  <div class="card">
+    <div class="lbl">Date</div>
+    <input type="text" id="date" placeholder="Select date" readonly style="cursor:pointer; margin-bottom:10px" />
+    <div class="row">
+      <div><div class="lbl" style="margin-bottom:4px">From</div><input type="time" id="timeStart" value="07:30" /></div>
+      <div><div class="lbl" style="margin-bottom:4px">To</div><input type="time" id="timeEnd" value="10:30" /></div>
+    </div>
+  </div>
+
+  <div id="weather"></div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px">
+      <div class="lbl" style="margin:0">Field availability</div>
+      <div id="fieldBadge"></div>
+    </div>
+    <div id="avail"><p style="color:var(--muted); font-size:14px">Select a date above.</p></div>
+  </div>
+
+  <button class="btn btn-ghost btn-block" id="shareAvail" style="display:none">
+    <svg class="wa-svg" width="17" height="17" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+    Share availability
+  </button>
+
+  <details style="margin-top:14px">
+    <summary id="dataStatus">No data loaded</summary>
+    <div style="padding:12px 0 0">
+      <p style="font-size:13px; color:var(--muted); margin-bottom:10px">Source: <a href="https://www.nycgovparks.org/permits/field-and-court/issued/M022/csv" target="_blank" style="color:var(--green)">NYC Parks CSV</a></p>
+      <button class="btn btn-primary btn-block" id="refreshCsv">🔄 Refresh data</button>
+      <p style="font-size:12px; color:var(--muted); margin:12px 0 6px">Manual fallback — paste CSV:</p>
+      <textarea id="csv" placeholder='"Start","End","Field",...' style="min-height:70px"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="btn btn-ghost btn-sm" id="loadCsv">Load</button>
+        <button class="btn btn-ghost btn-sm" id="clearCsv">Clear</button>
       </div>
     </div>
-    <div id="weather" style="margin-top:12px"></div>
-    <div id="avail" style="margin-top:14px"></div>
-    <div id="summary" class="summary" hidden></div>
-    <div class="actions">
-      <button id="copy" class="secondary" hidden>📋 Copy</button>
-      <button id="share" class="secondary" hidden>📤 Share to WhatsApp</button>
-    </div>
-    <details>
-      <summary id="dataStatus">No permit data loaded</summary>
-      <div style="margin-top:10px">
-        <p class="muted" style="margin:0 0 8px">Data source:
-          <a href="https://www.nycgovparks.org/permits/field-and-court/issued/M022/csv" target="_blank" rel="noopener" style="color:var(--accent)">NYC Parks CSV</a>
-          — auto-refreshes monthly.</p>
-        <div class="actions" style="margin-top:0">
-          <button id="refreshCsv">🔄 Refresh now</button>
-        </div>
-        <p class="muted" style="margin:10px 0 6px">Manual fallback (if auto-refresh fails):</p>
-        <textarea id="csv" placeholder='"Start","End","Field",...'></textarea>
-        <div class="actions">
-          <button id="loadCsv" class="secondary">Load pasted CSV</button>
-          <button class="secondary" id="clearCsv">Clear data</button>
-        </div>
-      </div>
-    </details>
-  </section>
+  </details>
+</div>
 
-  <section>
-    <h2>2. Pick teams</h2>
-    <label for="names">Players (one per line)</label>
+<!-- TEAMS -->
+<div id="tab-teams" class="tab">
+  <div class="card">
+    <div class="lbl">Players — one per line</div>
     <textarea id="names" placeholder="Alice&#10;Bob&#10;Carol&#10;Dave"></textarea>
-    <div class="actions">
-      <button id="shuffle">Randomize teams</button>
-      <button class="secondary" id="reroll" hidden>Re-roll</button>
-      <button class="secondary" id="shareTeams" hidden>📤 Share teams</button>
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-primary" id="shuffle">Randomize</button>
+      <button class="btn btn-ghost" id="reroll" hidden>Re-roll</button>
     </div>
-    <div id="teams"></div>
-  </section>
+  </div>
+
+  <div id="teamsOut"></div>
+
+  <div id="lockBar" style="display:none">
+    <button class="btn btn-primary btn-block" id="lockBtn" style="margin-bottom:8px">📌 Lock & create game</button>
+    <button class="btn btn-ghost btn-block" id="shareTeamsBtn">
+      <svg class="wa-svg" width="17" height="17" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+      Share teams
+    </button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="tab-stats" class="tab">
+  <div id="lbSection" style="display:none">
+    <div class="card">
+      <div class="lbl">⚽ Top scorers</div>
+      <div id="lbGoals"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">🎯 Top assists</div>
+      <div id="lbAssists"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">🏆 Win / Loss</div>
+      <div id="lbWins"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="lbl">Games</div>
+    <div id="gamesList"><p style="color:var(--muted); font-size:14px">No games yet. Lock a team to get started.</p></div>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div id="modal" class="modal-bg" style="display:none" onclick="closeModal(event)">
+  <div class="modal">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
+      <strong style="font-size:15px">Share preview</strong>
+      <button onclick="closeModal()" style="background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1">×</button>
+    </div>
+    <pre id="modalText"></pre>
+    <div class="row">
+      <button class="btn btn-ghost" id="modalCopy">📋 Copy</button>
+      <button class="btn btn-ghost" id="modalWa">
+        <svg class="wa-svg" width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+        WhatsApp
+      </button>
+    </div>
+  </div>
 </div>
 
 <script>
 "use strict";
-
-// ---------- CSV loading ----------
-const LS_CSV = "dewitt_csv_v1";
+const LS_CSV   = "dewitt_csv_v1";
 const LS_NAMES = "dewitt_names_v1";
+const LS_GAMES = "dewitt_games_v1";
+const $ = id => document.getElementById(id);
 
-const $ = (id) => document.getElementById(id);
+let currentTeams = null;
+let weatherCache = null;
 
+// ── NAV ──────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  $(`tab-${name}`).classList.add('active');
+  document.querySelectorAll('.nav button')[{avail:0,teams:1,stats:2}[name]].classList.add('active');
+  if (name === 'stats') renderStats();
+}
+
+// ── CSV ───────────────────────────────────────────────────────
 function parseCsv(text) {
   const rows = [];
-  let row = [], field = "", inQuotes = false;
+  let row = [], field = "", inQ = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
-    if (inQuotes) {
+    if (inQ) {
       if (c === '"' && text[i+1] === '"') { field += '"'; i++; }
-      else if (c === '"') { inQuotes = false; }
-      else { field += c; }
+      else if (c === '"') inQ = false;
+      else field += c;
     } else {
-      if (c === '"') inQuotes = true;
+      if (c === '"') inQ = true;
       else if (c === ',') { row.push(field); field = ""; }
       else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ""; }
-      else if (c === '\r') {}
-      else { field += c; }
+      else if (c !== '\r') field += c;
     }
   }
-  if (field.length || row.length) { row.push(field); rows.push(row); }
+  if (field || row.length) { row.push(field); rows.push(row); }
   if (!rows.length) return [];
   const header = rows[0].map(h => h.trim());
   return rows.slice(1).filter(r => r.length === header.length).map(r => {
-    const obj = {};
-    header.forEach((h, i) => obj[h] = r[i]);
-    return obj;
+    const o = {}; header.forEach((h, i) => o[h] = r[i]); return o;
   });
 }
-
-// Parse "3/17/2026 8:00 a.m." -> { date: "2026-03-17", minutes: 480 }
-function parseDateTime(s) {
-  const m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(a\.m\.|p\.m\.)/i);
-  if (!m) return null;
-  const [, mo, da, yr, hh, mm, ampm] = m;
-  let hour = parseInt(hh, 10) % 12;
-  if (/p/i.test(ampm)) hour += 12;
-  const minutes = hour * 60 + parseInt(mm, 10);
-  const date = `${yr}-${mo.padStart(2,"0")}-${da.padStart(2,"0")}`;
-  return { date, minutes };
-}
-
-function minToLabel(m) {
-  const h24 = Math.floor(m / 60), mm = m % 60;
-  const ampm = h24 >= 12 ? "PM" : "AM";
-  const h12 = ((h24 + 11) % 12) + 1;
-  return `${h12}:${String(mm).padStart(2,"0")} ${ampm}`;
-}
-
-// ---------- availability ----------
-function timeToMin(s) {
-  const [h, m] = s.split(":").map(Number);
-  return h * 60 + m;
-}
-function getWindow() {
-  const s = $("timeStart").value || "07:30";
-  const e = $("timeEnd").value || "10:30";
-  return { WIN_START: timeToMin(s), WIN_END: timeToMin(e) };
-}
-
 function getPermits() {
   const raw = localStorage.getItem(LS_CSV);
   if (!raw) return null;
   try { return parseCsv(raw); } catch { return null; }
 }
+function updateDataStatus() {
+  const p = getPermits();
+  if (!p) { $("dataStatus").textContent = "No data loaded"; return; }
+  const dates = [...new Set(p.map(x => { const d = parseDateTime(x.Start); return d?.date; }).filter(Boolean))].sort();
+  $("dataStatus").textContent = `${p.length} permits (${dates[0]} → ${dates[dates.length-1]})`;
+}
 
+// ── DATE/TIME ─────────────────────────────────────────────────
+function parseDateTime(s) {
+  const m = s && s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(a\.m\.|p\.m\.)/i);
+  if (!m) return null;
+  const [, mo, da, yr, hh, mm, ampm] = m;
+  let h = parseInt(hh,10) % 12; if (/p/i.test(ampm)) h += 12;
+  return { date: `${yr}-${mo.padStart(2,"0")}-${da.padStart(2,"0")}`, minutes: h*60+parseInt(mm,10) };
+}
+function minToLabel(m) {
+  const h24 = Math.floor(m/60), mm = m%60, ampm = h24>=12?"PM":"AM";
+  return `${((h24+11)%12)+1}:${String(mm).padStart(2,"0")} ${ampm}`;
+}
+function getWindow() {
+  const parse = s => { const [h,m] = s.split(":").map(Number); return h*60+m; };
+  return { WIN_START: parse($("timeStart").value||"07:30"), WIN_END: parse($("timeEnd").value||"10:30") };
+}
+function fmtDate(iso) {
+  return new Date(iso+"T00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+}
+
+// ── AVAILABILITY ─────────────────────────────────────────────
 function renderAvailability() {
   const date = $("date").value;
-  const out = $("avail");
-  $("share").hidden = !date;
-  $("copy").hidden = !date;
   const permits = getPermits();
-  if (!permits) {
-    out.innerHTML = `<p class="muted">Load permit data below to see availability.</p>`;
-    renderSummary();
+  $("shareAvail").style.display = date ? "" : "none";
+
+  if (!date) {
+    $("avail").innerHTML = `<p style="color:var(--muted);font-size:14px">Select a date above.</p>`;
+    $("fieldBadge").innerHTML = "";
     return;
   }
-  if (!date) { out.innerHTML = ""; renderSummary(); return; }
-
-  const { WIN_START, WIN_END } = getWindow();
-
-  // Treat all non-basketball permits as sharing the same multi-use field.
-  // (Soccer / Softball / Baseball / Football permits all occupy the same grass.)
-  const permitsOnField = permits
-    .map(p => ({
-      start: parseDateTime(p.Start),
-      end: parseDateTime(p.End),
-      field: p.Field,
-      org: p.Organization || p["Event Name"] || "Unknown",
-      type: (p["Sport or Event Type"] || "").trim(),
-    }))
-    .filter(p => p.start && p.end && p.start.date === date)
-    .filter(p => p.field && !/basketball/i.test(p.field))
-    .filter(p => p.start.minutes < WIN_END && p.end.minutes > WIN_START)
-    .sort((a, b) => a.start.minutes - b.start.minutes);
-
-  // Merge overlapping permit intervals into one "busy" timeline.
-  const busy = [];
-  for (const p of permitsOnField) {
-    const s = Math.max(p.start.minutes, WIN_START);
-    const e = Math.min(p.end.minutes, WIN_END);
-    if (!busy.length || s > busy[busy.length - 1].end) busy.push({ start: s, end: e });
-    else busy[busy.length - 1].end = Math.max(busy[busy.length - 1].end, e);
-  }
-
-  // Free gaps inside the window.
-  const gaps = [];
-  let cursor = WIN_START;
-  for (const b of busy) {
-    if (b.start > cursor) gaps.push([cursor, b.start]);
-    cursor = Math.max(cursor, b.end);
-  }
-  if (cursor < WIN_END) gaps.push([cursor, WIN_END]);
-
-  let statusHtml;
-  if (!permitsOnField.length) statusHtml = `<span class="status-free">FREE ${minToLabel(WIN_START)} – ${minToLabel(WIN_END)}</span>`;
-  else if (!gaps.length) statusHtml = `<span class="status-taken">TAKEN</span>`;
-  else statusHtml = `<span class="status-partial">PARTIALLY FREE</span>`;
-
-  let bodyHtml = "";
-  if (gaps.length) {
-    bodyHtml += gaps.map(([s, e]) =>
-      `<div class="slot">✅ Free ${minToLabel(s)} – ${minToLabel(e)}</div>`
-    ).join("");
-  }
-  if (permitsOnField.length) {
-    bodyHtml += permitsOnField.map(p => {
-      const s = Math.max(p.start.minutes, WIN_START);
-      const e = Math.min(p.end.minutes, WIN_END);
-      return `<div class="slot">⛔ ${minToLabel(s)} – ${minToLabel(e)} <span class="who">${p.org}${p.type ? ` <span class="tag">${p.field} • ${p.type}</span>` : ` <span class="tag">${p.field}</span>`}</span></div>`;
-    }).join("");
-  }
-
-  out.innerHTML = `
-    <div class="field-block">
-      <div class="field-name">DeWitt Clinton field — ${statusHtml}</div>
-      ${bodyHtml}
-    </div>`;
-  renderSummary();
-}
-
-function renderSummary() {
-  const el = $("summary");
-  const text = buildShareText();
-  if (!text) { el.hidden = true; el.textContent = ""; return; }
-  el.hidden = false;
-  el.textContent = text;
-}
-
-// ---------- CSV UI ----------
-function updateDataStatus() {
-  const permits = getPermits();
-  const el = $("dataStatus");
-  if (!permits) { el.textContent = "No permit data loaded — tap to paste CSV"; return; }
-  // Count dates covered.
-  const dates = new Set(
-    permits.map(p => {
-      const d = parseDateTime(p.Start);
-      return d ? d.date : null;
-    }).filter(Boolean)
-  );
-  const sorted = [...dates].sort();
-  const range = sorted.length ? `${sorted[0]} → ${sorted[sorted.length-1]}` : "no dated rows";
-  el.textContent = `Loaded ${permits.length} permits (${range}) — tap to update`;
-}
-
-$("loadCsv").addEventListener("click", () => {
-  const text = $("csv").value.trim();
-  if (!text) return;
-  localStorage.setItem(LS_CSV, text);
-  localStorage.setItem(LS_CSV + "_ts", String(Date.now()));
-  $("csv").value = "";
-  updateDataStatus();
-  renderAvailability();
-});
-
-$("clearCsv").addEventListener("click", () => {
-  localStorage.removeItem(LS_CSV);
-  localStorage.removeItem(LS_CSV + "_ts");
-  updateDataStatus();
-  renderAvailability();
-});
-
-$("date").addEventListener("change", () => { renderAvailability(); renderWeather(); });
-$("timeStart").addEventListener("change", () => { renderAvailability(); renderWeather(); });
-$("timeEnd").addEventListener("change", () => { renderAvailability(); renderWeather(); });
-
-// ---------- Auto-fetch CSV ----------
-// Primary: our own /api/permits serverless function (on Vercel).
-// Fallback: public CORS proxy, for local-file / GitHub Pages use.
-const OWN_API = "/api/permits";
-const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent("https://www.nycgovparks.org/permits/field-and-court/issued/M022/csv")}`;
-
-async function fetchCsvText() {
-  // Try our API first (works on Vercel). If it 404s (e.g. GitHub Pages / localhost), fall back to public proxy.
-  try {
-    const r = await fetch(OWN_API);
-    if (r.ok) {
-      const text = await r.text();
-      if (text.includes("Start") && text.includes("Field")) return text;
-    }
-  } catch {}
-  const r2 = await fetch(PROXY_URL);
-  if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
-  return r2.text();
-}
-
-async function refreshCsvFromNetwork({ silent } = {}) {
-  const btn = $("refreshCsv");
-  const orig = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "Fetching…";
-  try {
-    const text = await fetchCsvText();
-    if (!text.includes("Start") || !text.includes("Field")) throw new Error("Response didn't look like the expected CSV");
-    localStorage.setItem(LS_CSV, text);
-    localStorage.setItem(LS_CSV + "_ts", String(Date.now()));
-    updateDataStatus();
-    renderAvailability();
-    btn.textContent = "✅ Refreshed";
-    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1600);
-  } catch (e) {
-    btn.textContent = "❌ Failed — paste manually";
-    btn.disabled = false;
-    if (!silent) console.warn("CSV refresh failed:", e);
-    setTimeout(() => { btn.textContent = orig; }, 2500);
-  }
-}
-
-$("refreshCsv").addEventListener("click", () => refreshCsvFromNetwork({}));
-
-// Auto-refresh on load if data is stale (>7 days) or missing.
-function maybeAutoRefresh() {
-  const ts = parseInt(localStorage.getItem(LS_CSV + "_ts") || "0", 10);
-  const ageDays = (Date.now() - ts) / 86400000;
-  if (!ts || ageDays > 7) refreshCsvFromNetwork({ silent: true });
-}
-
-// ---------- Weather (Open-Meteo, no API key) ----------
-// DeWitt Clinton Park, NYC
-const LAT = 40.7706, LON = -73.9931;
-
-// WMO weather codes -> { icon, label }
-function weatherFromCode(code) {
-  if (code === 0) return { icon: "☀️", label: "Sunny" };
-  if (code === 1) return { icon: "🌤️", label: "Mostly sunny" };
-  if (code === 2) return { icon: "⛅", label: "Partly cloudy" };
-  if (code === 3) return { icon: "☁️", label: "Cloudy" };
-  if (code === 45 || code === 48) return { icon: "🌫️", label: "Foggy" };
-  if (code >= 51 && code <= 57) return { icon: "🌦️", label: "Drizzle" };
-  if (code >= 61 && code <= 67) return { icon: "🌧️", label: "Rainy" };
-  if (code >= 71 && code <= 77) return { icon: "🌨️", label: "Snowy" };
-  if (code >= 80 && code <= 82) return { icon: "🌧️", label: "Rain showers" };
-  if (code >= 85 && code <= 86) return { icon: "🌨️", label: "Snow showers" };
-  if (code >= 95) return { icon: "⛈️", label: "Thunderstorm" };
-  return { icon: "🌡️", label: "Unknown" };
-}
-
-const cToF = (c) => (c * 9/5) + 32;
-
-let weatherCache = null; // { date, data }
-
-// Pick the right Open-Meteo endpoint for the date:
-// - past dates → archive (actual historical weather)
-// - next 15 days → forecast (real forecast)
-// - further future → archive for SAME date last year (typical-weather estimate)
-async function fetchWeather(date) {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const picked = new Date(date + "T00:00");
-  const diffDays = Math.round((picked - today) / 86400000);
-
-  if (diffDays < 0) {
-    return { mode: "historical", date, ...(await callArchive(date)) };
-  }
-  if (diffDays <= 15) {
-    return { mode: "forecast", date, ...(await callForecast(date)) };
-  }
-  // Far future → use same calendar date from 1 year ago as a "typical" estimate.
-  const y = picked.getFullYear() - 1;
-  const sub = `${y}-${String(picked.getMonth()+1).padStart(2,"0")}-${String(picked.getDate()).padStart(2,"0")}`;
-  return { mode: "typical", date: sub, ...(await callArchive(sub)) };
-}
-
-async function callForecast(date) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
-    `&hourly=temperature_2m,weather_code,precipitation_probability` +
-    `&temperature_unit=celsius&timezone=America%2FNew_York` +
-    `&start_date=${date}&end_date=${date}`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error("forecast fetch failed");
-  return r.json();
-}
-
-async function callArchive(date) {
-  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${LAT}&longitude=${LON}` +
-    `&hourly=temperature_2m,weather_code,precipitation` +
-    `&temperature_unit=celsius&timezone=America%2FNew_York` +
-    `&start_date=${date}&end_date=${date}`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error("archive fetch failed");
-  return r.json();
-}
-
-async function renderWeather() {
-  const el = $("weather");
-  const date = $("date").value;
-  if (!date) { el.innerHTML = ""; return; }
-
-  el.innerHTML = `<div class="weather"><span class="icon">⏳</span><span class="detail">Loading weather…</span></div>`;
-  try {
-    const data = await fetchWeather(date);
-    const times = data.hourly.time;
-    const temps = data.hourly.temperature_2m;
-    const codes = data.hourly.weather_code;
-    // Archive uses `precipitation` (mm); forecast uses `precipitation_probability` (%).
-    const isForecast = data.mode === "forecast";
-    const precipSeries = isForecast ? data.hourly.precipitation_probability : data.hourly.precipitation;
-
-    const { WIN_START, WIN_END } = getWindow();
-    const startHour = Math.floor(WIN_START / 60);
-    const endHour = Math.ceil(WIN_END / 60);
-    const idxs = times.map((t, i) => ({ t, i })).filter(({t}) => {
-      const h = parseInt(t.slice(11, 13), 10);
-      return h >= startHour && h < endHour;
-    }).map(({i}) => i);
-
-    if (!idxs.length) { el.innerHTML = ""; return; }
-    const minC = Math.min(...idxs.map(i => temps[i]));
-    const maxC = Math.max(...idxs.map(i => temps[i]));
-    const code = idxs.map(i => codes[i]).sort((a,b) => b - a)[0];
-    const { icon, label } = weatherFromCode(code);
-
-    const minF = Math.round(cToF(minC));
-    const maxF = Math.round(cToF(maxC));
-    const minCr = Math.round(minC);
-    const maxCr = Math.round(maxC);
-
-    let rainStr;
-    if (isForecast) {
-      const pct = Math.max(...idxs.map(i => precipSeries[i] ?? 0));
-      rainStr = `Rain chance: ${pct}%`;
-    } else {
-      const mm = idxs.reduce((s, i) => s + (precipSeries[i] ?? 0), 0);
-      rainStr = mm > 0.1 ? `Precipitation: ${mm.toFixed(1)} mm` : "No rain";
-    }
-
-    const modeTag =
-      data.mode === "historical" ? `<span class="tag">actual</span>` :
-      data.mode === "typical"    ? `<span class="tag">typical (${data.date.slice(0,4)})</span>` : "";
-
-    weatherCache = { date, summary: { icon, label, minC: minCr, maxC: maxCr, minF, maxF, rainStr, mode: data.mode } };
-    renderSummary();
-
-    el.innerHTML = `
-      <div class="weather">
-        <span class="icon">${icon}</span>
-        <div>
-          <div class="main">${label} — ${minCr}–${maxCr}°C / ${minF}–${maxF}°F ${modeTag}</div>
-          <div class="detail">${rainStr} (${minToLabel(WIN_START)}–${minToLabel(WIN_END)})</div>
-        </div>
-      </div>`;
-  } catch (e) {
-    el.innerHTML = `<div class="weather"><span class="icon">⚠️</span><span class="detail">Couldn't load weather</span></div>`;
-  }
-}
-
-// ---------- Share to WhatsApp ----------
-function buildShareText() {
-  const date = $("date").value;
-  if (!date) return "";
-  const { WIN_START, WIN_END } = getWindow();
-  const d = new Date(date + "T00:00");
-  const dateLabel = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-  const winLabel = `${minToLabel(WIN_START)}–${minToLabel(WIN_END)}`;
-
-  const lines = [`🏟️ DeWitt Clinton — ${dateLabel} (${winLabel})`];
-
-  if (weatherCache && weatherCache.date === date) {
-    const w = weatherCache.summary;
-    const modeNote = w.mode === "historical" ? " (actual)" : w.mode === "typical" ? " (typical)" : "";
-    lines.push(`${w.icon} ${w.label}${modeNote}, ${w.minC}–${w.maxC}°C / ${w.minF}–${w.maxF}°F, ${w.rainStr}`);
-  }
-  lines.push("");
-
-  const permits = getPermits();
   if (!permits) {
-    lines.push("(No permit data loaded)");
-    return lines.join("\n");
+    $("avail").innerHTML = `<p style="color:var(--muted);font-size:14px">Load permit data below to see availability.</p>`;
+    $("fieldBadge").innerHTML = "";
+    return;
   }
 
-  // Same unified-field logic as renderAvailability: all non-basketball permits share the turf.
-  const here = permits
-    .map(p => ({
-      start: parseDateTime(p.Start),
-      end: parseDateTime(p.End),
-      field: p.Field,
-      org: p.Organization || p["Event Name"] || "Unknown",
-      type: (p["Sport or Event Type"] || "").trim(),
-    }))
+  const { WIN_START, WIN_END } = getWindow();
+  const active = permits
+    .map(p => ({ start: parseDateTime(p.Start), end: parseDateTime(p.End), field: p.Field, org: p.Organization||p["Event Name"]||"Unknown", type: (p["Sport or Event Type"]||"").trim() }))
     .filter(p => p.start && p.end && p.start.date === date)
     .filter(p => p.field && !/basketball/i.test(p.field))
     .filter(p => p.start.minutes < WIN_END && p.end.minutes > WIN_START)
-    .sort((a, b) => a.start.minutes - b.start.minutes);
+    .sort((a,b) => a.start.minutes - b.start.minutes);
 
   const busy = [];
-  for (const p of here) {
-    const s = Math.max(p.start.minutes, WIN_START);
-    const e = Math.min(p.end.minutes, WIN_END);
-    if (!busy.length || s > busy[busy.length-1].end) busy.push({ start: s, end: e });
+  for (const p of active) {
+    const s = Math.max(p.start.minutes, WIN_START), e = Math.min(p.end.minutes, WIN_END);
+    if (!busy.length || s > busy[busy.length-1].end) busy.push({start:s,end:e});
     else busy[busy.length-1].end = Math.max(busy[busy.length-1].end, e);
   }
   const gaps = [];
-  let cursor = WIN_START;
-  for (const b of busy) {
-    if (b.start > cursor) gaps.push([cursor, b.start]);
-    cursor = Math.max(cursor, b.end);
-  }
-  if (cursor < WIN_END) gaps.push([cursor, WIN_END]);
+  let cur = WIN_START;
+  for (const b of busy) { if (b.start > cur) gaps.push([cur,b.start]); cur = Math.max(cur,b.end); }
+  if (cur < WIN_END) gaps.push([cur, WIN_END]);
 
-  if (!here.length) {
-    lines.push(`✅ FREE ${winLabel}`);
-  } else if (!gaps.length) {
-    lines.push(`⛔ TAKEN ${winLabel}`);
-    for (const p of here) {
-      const s = Math.max(p.start.minutes, WIN_START), e = Math.min(p.end.minutes, WIN_END);
-      lines.push(`  • ${minToLabel(s)}–${minToLabel(e)} — ${p.field}: ${p.org}`);
+  const badge = !active.length ? `<span class="badge badge-green">Free</span>`
+    : !gaps.length ? `<span class="badge badge-red">Taken</span>`
+    : `<span class="badge badge-yellow">Partial</span>`;
+  $("fieldBadge").innerHTML = badge;
+
+  const freeRows = gaps.map(([s,e]) =>
+    `<div class="slot-row"><div class="dot dot-green"></div><span class="slot-time">${minToLabel(s)} – ${minToLabel(e)}</span><span class="slot-who">Free</span></div>`
+  ).join("");
+  const takenRows = active.map(p => {
+    const s = Math.max(p.start.minutes, WIN_START), e = Math.min(p.end.minutes, WIN_END);
+    return `<div class="slot-row"><div class="dot dot-red"></div><span class="slot-time">${minToLabel(s)} – ${minToLabel(e)}</span><span class="slot-who">${p.org}<span class="tag">${p.field}</span></span></div>`;
+  }).join("");
+
+  $("avail").innerHTML = freeRows + takenRows || `<p style="color:var(--muted);font-size:14px">No permits on this date — field is free.</p>`;
+}
+
+// ── WEATHER ───────────────────────────────────────────────────
+const LAT=40.7706, LON=-73.9931;
+const cToF = c => Math.round(c*9/5+32);
+function wIcon(code) {
+  if (code===0) return {icon:"☀️",label:"Sunny"};
+  if (code===1) return {icon:"🌤️",label:"Mostly sunny"};
+  if (code===2) return {icon:"⛅",label:"Partly cloudy"};
+  if (code===3) return {icon:"☁️",label:"Cloudy"};
+  if (code<=48) return {icon:"🌫️",label:"Foggy"};
+  if (code<=57) return {icon:"🌦️",label:"Drizzle"};
+  if (code<=67) return {icon:"🌧️",label:"Rainy"};
+  if (code<=77) return {icon:"🌨️",label:"Snowy"};
+  if (code<=82) return {icon:"🌧️",label:"Showers"};
+  if (code>=95) return {icon:"⛈️",label:"Thunderstorm"};
+  return {icon:"🌡️",label:"Unknown"};
+}
+async function renderWeather() {
+  const el = $("weather"), date = $("date").value;
+  if (!date) { el.innerHTML=""; return; }
+  el.innerHTML = `<div class="weather-chip"><span class="icon">⏳</span><span style="color:var(--muted)">Loading weather…</span></div>`;
+  try {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff = Math.round((new Date(date+"T00:00")-today)/86400000);
+    let mode="forecast", fetchDate=date;
+    if (diff<0) { mode="archive"; }
+    else if (diff>15) {
+      mode="typical";
+      const d=new Date(date+"T00:00"); d.setFullYear(d.getFullYear()-1);
+      fetchDate=d.toISOString().slice(0,10);
     }
+    const base = (mode==="forecast")
+      ? "https://api.open-meteo.com/v1/forecast"
+      : "https://archive-api.open-meteo.com/v1/archive";
+    const params = (mode==="forecast")
+      ? "temperature_2m,weather_code,precipitation_probability"
+      : "temperature_2m,weather_code,precipitation";
+    const r = await fetch(`${base}?latitude=${LAT}&longitude=${LON}&hourly=${params}&temperature_unit=celsius&timezone=America%2FNew_York&start_date=${fetchDate}&end_date=${fetchDate}`);
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    const {WIN_START,WIN_END} = getWindow();
+    const sh=Math.floor(WIN_START/60), eh=Math.ceil(WIN_END/60);
+    const idxs = data.hourly.time.map((t,i)=>({h:parseInt(t.slice(11,13),10),i})).filter(({h})=>h>=sh&&h<eh).map(({i})=>i);
+    if (!idxs.length) { el.innerHTML=""; return; }
+    const temps=data.hourly.temperature_2m, codes=data.hourly.weather_code;
+    const precip = mode==="forecast" ? data.hourly.precipitation_probability : data.hourly.precipitation;
+    const minC=Math.round(Math.min(...idxs.map(i=>temps[i]))), maxC=Math.round(Math.max(...idxs.map(i=>temps[i])));
+    const code=idxs.map(i=>codes[i]).sort((a,b)=>b-a)[0];
+    const {icon,label}=wIcon(code);
+    let rainStr = mode==="forecast"
+      ? `${Math.max(...idxs.map(i=>precip[i]??0))}% rain`
+      : (() => { const mm=idxs.reduce((s,i)=>s+(precip[i]??0),0); return mm>0.1?`${mm.toFixed(1)}mm rain`:"No rain"; })();
+    const note = mode==="typical" ? ` <span class="tag">typical</span>` : mode==="archive" ? ` <span class="tag">actual</span>` : "";
+    weatherCache = {date, summary:{icon,label,minC,maxC,minF:cToF(minC),maxF:cToF(maxC),rainStr,note}};
+    el.innerHTML = `<div class="weather-chip">
+      <span class="icon">${icon}</span>
+      <div>
+        <div style="font-weight:600;font-size:14px">${label}${note} — ${minC}–${maxC}°C / ${cToF(minC)}–${cToF(maxC)}°F</div>
+        <div style="font-size:12px;color:var(--muted)">${rainStr}</div>
+      </div>
+    </div>`;
+  } catch { el.innerHTML=`<div class="weather-chip"><span class="icon">⚠️</span><span style="color:var(--muted)">Weather unavailable</span></div>`; }
+}
+
+// ── MODAL / SHARE ─────────────────────────────────────────────
+function showModal(text) { $("modalText").textContent=text; $("modal").style.display="flex"; }
+function closeModal(e) { if (!e||e.target===$("modal")) $("modal").style.display="none"; }
+
+$("modalCopy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("modalText").textContent); $("modalCopy").textContent="✅ Copied"; setTimeout(()=>$("modalCopy").textContent="📋 Copy",1500); } catch {}
+});
+$("modalWa").addEventListener("click", async () => {
+  const text=$("modalText").textContent;
+  if (navigator.share) { try { await navigator.share({text}); return; } catch {} }
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank");
+});
+
+function buildAvailText() {
+  const date=$("date").value; if (!date) return "";
+  const {WIN_START,WIN_END}=getWindow();
+  const lines=[`🏟️ DeWitt Clinton — ${fmtDate(date)} (${minToLabel(WIN_START)}–${minToLabel(WIN_END)})`];
+  if (weatherCache?.date===date) {
+    const w=weatherCache.summary;
+    lines.push(`${w.icon} ${w.label}, ${w.minC}–${w.maxC}°C / ${w.minF}–${w.maxF}°F, ${w.rainStr}`);
+  }
+  lines.push("");
+  const permits=getPermits();
+  if (!permits) { lines.push("(No permit data)"); return lines.join("\n"); }
+  const active=permits
+    .map(p=>({start:parseDateTime(p.Start),end:parseDateTime(p.End),field:p.Field,org:p.Organization||p["Event Name"]||"Unknown"}))
+    .filter(p=>p.start&&p.end&&p.start.date===date)
+    .filter(p=>p.field&&!/basketball/i.test(p.field))
+    .filter(p=>p.start.minutes<WIN_END&&p.end.minutes>WIN_START)
+    .sort((a,b)=>a.start.minutes-b.start.minutes);
+  const busy=[];
+  for (const p of active) {
+    const s=Math.max(p.start.minutes,WIN_START),e=Math.min(p.end.minutes,WIN_END);
+    if (!busy.length||s>busy[busy.length-1].end) busy.push({start:s,end:e});
+    else busy[busy.length-1].end=Math.max(busy[busy.length-1].end,e);
+  }
+  const gaps=[]; let cur=WIN_START;
+  for (const b of busy) { if(b.start>cur) gaps.push([cur,b.start]); cur=Math.max(cur,b.end); }
+  if (cur<WIN_END) gaps.push([cur,WIN_END]);
+  if (!active.length) lines.push(`✅ Field FREE ${minToLabel(WIN_START)}–${minToLabel(WIN_END)}`);
+  else if (!gaps.length) {
+    lines.push(`⛔ TAKEN`);
+    active.forEach(p=>lines.push(`  • ${minToLabel(Math.max(p.start.minutes,WIN_START))}–${minToLabel(Math.min(p.end.minutes,WIN_END))} — ${p.org}`));
   } else {
     lines.push(`🟡 PARTIALLY FREE`);
-    for (const [s, e] of gaps) lines.push(`  ✅ Free ${minToLabel(s)}–${minToLabel(e)}`);
-    for (const p of here) {
-      const s = Math.max(p.start.minutes, WIN_START), e = Math.min(p.end.minutes, WIN_END);
-      lines.push(`  ⛔ ${minToLabel(s)}–${minToLabel(e)} — ${p.field}: ${p.org}`);
-    }
+    gaps.forEach(([s,e])=>lines.push(`  ✅ ${minToLabel(s)}–${minToLabel(e)}`));
+    active.forEach(p=>lines.push(`  ⛔ ${minToLabel(Math.max(p.start.minutes,WIN_START))}–${minToLabel(Math.min(p.end.minutes,WIN_END))} — ${p.org}`));
   }
-
   return lines.join("\n");
 }
 
-async function shareToWhatsApp() {
-  const text = buildShareText();
-  if (!text) return;
-  // Try native share first (works on mobile, opens WhatsApp share sheet).
-  if (navigator.share) {
-    try { await navigator.share({ text }); return; } catch { /* user cancelled — fall through */ }
-  }
-  // Fallback: open wa.me link which opens WhatsApp with message pre-filled.
-  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-  window.open(url, "_blank");
-}
+$("shareAvail").addEventListener("click", () => showModal(buildAvailText()));
 
-$("share").addEventListener("click", shareToWhatsApp);
-
-$("copy").addEventListener("click", async () => {
-  const text = buildShareText();
-  if (!text) return;
-  try {
-    await navigator.clipboard.writeText(text);
-    const btn = $("copy"); const orig = btn.textContent;
-    btn.textContent = "✅ Copied";
-    setTimeout(() => { btn.textContent = orig; }, 1500);
-  } catch {
-    alert("Couldn't copy — select the summary text and copy manually.");
-  }
-});
-
-// ---------- Team randomizer ----------
+// ── TEAMS ─────────────────────────────────────────────────────
 function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+  const a=arr.slice();
+  for (let i=a.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a;
 }
-
-let currentTeams = null; // { teamA: [...], teamB: [...] }
-
 function renderTeams() {
-  const raw = $("names").value;
-  const names = raw.split("\n").map(s => s.trim()).filter(Boolean);
-  if (names.length < 2) {
-    $("teams").innerHTML = `<p class="muted" style="margin-top:10px">Add at least 2 players.</p>`;
-    $("reroll").hidden = true;
-    $("shareTeams").hidden = true;
-    currentTeams = null;
-    return;
-  }
-  const shuffled = shuffle(names);
-  const half = Math.ceil(shuffled.length / 2);
-  const teamA = shuffled.slice(0, half);
-  const teamB = shuffled.slice(half);
-  currentTeams = { teamA, teamB };
-  $("teams").innerHTML = `
-    <div class="teams">
-      <div class="team"><h3>Team A (${teamA.length})</h3><ol>${teamA.map(n=>`<li>${n}</li>`).join("")}</ol></div>
-      <div class="team"><h3>Team B (${teamB.length})</h3><ol>${teamB.map(n=>`<li>${n}</li>`).join("")}</ol></div>
-    </div>
-  `;
-  $("reroll").hidden = false;
-  $("shareTeams").hidden = false;
+  const names=$("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  if (names.length<2) { $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none"; currentTeams=null; return; }
+  const s=shuffle(names), half=Math.ceil(s.length/2);
+  currentTeams={teamA:s.slice(0,half),teamB:s.slice(half)};
+  $("teamsOut").innerHTML=`<div class="card"><div class="teams-grid">
+    <div class="team-card"><h4>Team A (${currentTeams.teamA.length})</h4><ol>${currentTeams.teamA.map(n=>`<li>${n}</li>`).join("")}</ol></div>
+    <div class="team-card"><h4>Team B (${currentTeams.teamB.length})</h4><ol>${currentTeams.teamB.map(n=>`<li>${n}</li>`).join("")}</ol></div>
+  </div></div>`;
+  $("reroll").hidden=false; $("lockBar").style.display="";
 }
-
-function buildTeamsShareText() {
+function buildTeamsText() {
   if (!currentTeams) return "";
-  const { teamA, teamB } = currentTeams;
-  const lines = ["⚽ Teams"];
-  lines.push("");
-  lines.push(`Team A (${teamA.length}):`);
-  teamA.forEach((n, i) => lines.push(`  ${i+1}. ${n}`));
-  lines.push("");
-  lines.push(`Team B (${teamB.length}):`);
-  teamB.forEach((n, i) => lines.push(`  ${i+1}. ${n}`));
+  const date=$("date").value;
+  const lines=[`⚽ DeWitt Clinton${date?" — "+fmtDate(date):""}`,""];
+  lines.push(`Team A (${currentTeams.teamA.length}):`);
+  currentTeams.teamA.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
+  lines.push("",`Team B (${currentTeams.teamB.length}):`);
+  currentTeams.teamB.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
   return lines.join("\n");
 }
-
-async function shareTeamsToWhatsApp() {
-  const text = buildTeamsShareText();
-  if (!text) return;
-  if (navigator.share) {
-    try { await navigator.share({ text }); return; } catch { /* fall through */ }
-  }
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-}
-
 $("shuffle").addEventListener("click", renderTeams);
 $("reroll").addEventListener("click", renderTeams);
-$("shareTeams").addEventListener("click", shareTeamsToWhatsApp);
-$("names").addEventListener("input", () => {
-  localStorage.setItem(LS_NAMES, $("names").value);
+$("shareTeamsBtn").addEventListener("click", () => showModal(buildTeamsText()));
+$("names").addEventListener("input", () => localStorage.setItem(LS_NAMES, $("names").value));
+
+// ── GAMES ─────────────────────────────────────────────────────
+function getGames() { try { return JSON.parse(localStorage.getItem(LS_GAMES)||"[]"); } catch { return []; } }
+function saveGames(g) { localStorage.setItem(LS_GAMES, JSON.stringify(g)); }
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+
+$("lockBtn").addEventListener("click", () => {
+  if (!currentTeams) return;
+  const date=$("date").value||new Date().toISOString().slice(0,10);
+  const games=getGames();
+  games.unshift({id:uid(),date,teamA:[...currentTeams.teamA],teamB:[...currentTeams.teamB],result:null});
+  saveGames(games);
+  switchTab("stats");
 });
 
-// ---------- init ----------
+// ── STATS ─────────────────────────────────────────────────────
+function renderStats() {
+  const games=getGames();
+  const list=$("gamesList");
+
+  if (!games.length) {
+    list.innerHTML=`<p style="color:var(--muted);font-size:14px">No games yet. Lock a team to get started.</p>`;
+    $("lbSection").style.display="none";
+    return;
+  }
+
+  list.innerHTML=games.map(g=>{
+    const played=g.result!==null;
+    const scoreStr=played?`${g.result.scoreA} – ${g.result.scoreB}`:"vs";
+    return `<div class="game-card" id="gc-${g.id}">
+      <div class="game-header" onclick="toggleGame('${g.id}')">
+        <div style="flex:1">
+          <div class="game-score">Team A ${scoreStr} Team B</div>
+          <div class="game-date">${fmtDate(g.date)}</div>
+        </div>
+        <span class="badge ${played?"badge-green":"badge-yellow"}">${played?"Played":"Upcoming"}</span>
+        <span style="color:var(--muted);margin-left:4px">›</span>
+      </div>
+      <div class="game-body" id="gb-${g.id}">${renderGameBody(g)}</div>
+    </div>`;
+  }).join("");
+
+  // Leaderboard
+  const stats={};
+  const ensure=p=>{ if(!stats[p]) stats[p]={goals:0,assists:0,wins:0,losses:0}; };
+  for (const g of games) {
+    if (!g.result) continue;
+    const winner=g.result.scoreA>g.result.scoreB?"A":g.result.scoreB>g.result.scoreA?"B":null;
+    [...g.teamA,...g.teamB].forEach(p=>{
+      ensure(p);
+      if (winner==="A"&&g.teamA.includes(p)) stats[p].wins++;
+      else if (winner==="B"&&g.teamB.includes(p)) stats[p].wins++;
+      else if (winner) stats[p].losses++;
+    });
+    (g.result.goals||[]).forEach(ev=>{
+      ensure(ev.player); stats[ev.player].goals++;
+      if (ev.assist) { ensure(ev.assist); stats[ev.assist].assists++; }
+    });
+  }
+  const entries=Object.entries(stats);
+  if (!entries.length) { $("lbSection").style.display="none"; return; }
+  $("lbSection").style.display="";
+  const lbRow=([name,s],i,key)=>`<div class="lb-row"><div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-val">${key==="wl"?`${s.wins}W–${s.losses}L`:s[key]}</div></div>`;
+  $("lbGoals").innerHTML=[...entries].filter(([,s])=>s.goals>0).sort((a,b)=>b[1].goals-a[1].goals).map((e,i)=>lbRow(e,i,"goals")).join("")||`<p style="color:var(--muted);font-size:13px">No goals yet.</p>`;
+  $("lbAssists").innerHTML=[...entries].filter(([,s])=>s.assists>0).sort((a,b)=>b[1].assists-a[1].assists).map((e,i)=>lbRow(e,i,"assists")).join("")||`<p style="color:var(--muted);font-size:13px">No assists yet.</p>`;
+  $("lbWins").innerHTML=[...entries].filter(([,s])=>s.wins+s.losses>0).sort((a,b)=>b[1].wins-a[1].wins).map((e,i)=>lbRow(e,i,"wl")).join("")||`<p style="color:var(--muted);font-size:13px">No results yet.</p>`;
+}
+
+function renderGameBody(g) {
+  const all=[...g.teamA,...g.teamB];
+  const opts=all.map(p=>`<option value="${p}">${p}</option>`).join("");
+  const goalsHtml=(g.result?.goals||[]).map((ev,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:13px;border-bottom:1px solid var(--border)">
+      <span>⚽ <strong>${ev.player}</strong> (Team ${ev.team})${ev.assist?` <span style="color:var(--muted)">🎯 ${ev.assist}</span>`:""}</span>
+      <button onclick="removeGoal('${g.id}',${i})" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer">✕</button>
+    </div>`).join("")||`<p style="color:var(--muted);font-size:13px;padding:4px 0">No goals recorded.</p>`;
+
+  return `<div style="padding-top:12px">
+    <div class="lbl">Teams</div>
+    <div class="row" style="margin-bottom:14px;font-size:13px">
+      <div>
+        <div style="color:var(--muted);margin-bottom:6px">Team A</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${g.teamA.map(p=>`<span class="badge badge-green">${p}</span>`).join("")}</div>
+        <div style="display:flex;gap:6px"><input id="addA-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','A')">+</button></div>
+      </div>
+      <div>
+        <div style="color:var(--muted);margin-bottom:6px">Team B</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${g.teamB.map(p=>`<span class="badge badge-yellow">${p}</span>`).join("")}</div>
+        <div style="display:flex;gap:6px"><input id="addB-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','B')">+</button></div>
+      </div>
+    </div>
+    <div class="lbl">Score</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <input type="number" min="0" id="scoreA-${g.id}" value="${g.result?.scoreA??""}" placeholder="A" style="width:64px;text-align:center;font-size:20px;font-weight:700"/>
+      <span style="color:var(--muted);font-size:18px">–</span>
+      <input type="number" min="0" id="scoreB-${g.id}" value="${g.result?.scoreB??""}" placeholder="B" style="width:64px;text-align:center;font-size:20px;font-weight:700"/>
+      <button class="btn btn-ghost btn-sm" onclick="saveScore('${g.id}')">Save</button>
+    </div>
+    <div class="lbl">Goals & assists</div>
+    <div style="margin-bottom:10px">${goalsHtml}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+      <select id="gPlayer-${g.id}" style="flex:2;font-size:13px;padding:7px"><option value="">Scorer…</option>${opts}</select>
+      <select id="gTeam-${g.id}" style="font-size:13px;padding:7px"><option value="A">Team A</option><option value="B">Team B</option></select>
+      <select id="gAssist-${g.id}" style="flex:2;font-size:13px;padding:7px"><option value="">Assist — none</option>${opts}</select>
+      <button class="btn btn-ghost btn-sm" onclick="addGoal('${g.id}')">+ Goal</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="shareGame('${g.id}')">
+        <svg class="wa-svg" width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+        Share result
+      </button>
+      <button class="btn btn-ghost btn-sm btn-danger" onclick="deleteGame('${g.id}')">Delete</button>
+    </div>
+  </div>`;
+}
+
+function toggleGame(id) { $(`gb-${id}`).classList.toggle("open"); }
+
+function saveScore(id) {
+  const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
+  const a=parseInt($(`scoreA-${id}`).value,10), b=parseInt($(`scoreB-${id}`).value,10);
+  if(isNaN(a)||isNaN(b)) return;
+  if(!g.result) g.result={scoreA:a,scoreB:b,goals:[]};
+  else { g.result.scoreA=a; g.result.scoreB=b; }
+  saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+}
+
+function addGoal(id) {
+  const player=$(`gPlayer-${id}`).value, team=$(`gTeam-${id}`).value, assist=$(`gAssist-${id}`).value||null;
+  if(!player) return;
+  const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
+  if(!g.result) g.result={scoreA:0,scoreB:0,goals:[]};
+  g.result.goals.push({player,team,assist});
+  if(team==="A") g.result.scoreA=(g.result.scoreA||0)+1;
+  else g.result.scoreB=(g.result.scoreB||0)+1;
+  saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+}
+
+function removeGoal(id,idx) {
+  const games=getGames(), g=games.find(x=>x.id===id); if(!g?.result?.goals) return;
+  const ev=g.result.goals[idx];
+  if(ev.team==="A") g.result.scoreA=Math.max(0,(g.result.scoreA||1)-1);
+  else g.result.scoreB=Math.max(0,(g.result.scoreB||1)-1);
+  g.result.goals.splice(idx,1);
+  saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+}
+
+function addPlayer(id,team) {
+  const inp=$(`add${team}-${id}`), name=inp.value.trim(); if(!name) return;
+  const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
+  if(team==="A") g.teamA.push(name); else g.teamB.push(name);
+  inp.value=""; saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+}
+
+function deleteGame(id) {
+  if(!confirm("Delete this game?")) return;
+  saveGames(getGames().filter(g=>g.id!==id)); renderStats();
+}
+
+function shareGame(id) {
+  const g=getGames().find(x=>x.id===id); if(!g) return;
+  const lines=[`⚽ DeWitt Clinton — ${fmtDate(g.date)}`];
+  if(g.result) lines.push(`Final: Team A ${g.result.scoreA} – ${g.result.scoreB} Team B`);
+  lines.push("",`Team A: ${g.teamA.join(", ")}`,`Team B: ${g.teamB.join(", ")}`);
+  if(g.result?.goals?.length) {
+    lines.push("","Goals:");
+    g.result.goals.forEach(ev=>lines.push(`  ⚽ ${ev.player} (Team ${ev.team})${ev.assist?` 🎯 ${ev.assist}`:""}`));
+  }
+  showModal(lines.join("\n"));
+}
+
+// ── CSV FETCH ────────────────────────────────────────────────
+const OWN_API="/api/permits";
+const PROXY=`https://corsproxy.io/?${encodeURIComponent("https://www.nycgovparks.org/permits/field-and-court/issued/M022/csv")}`;
+
+async function fetchCsvText() {
+  try { const r=await fetch(OWN_API); if(r.ok){const t=await r.text();if(t.includes("Start"))return t;} } catch {}
+  const r2=await fetch(PROXY); if(!r2.ok) throw new Error(); return r2.text();
+}
+
+async function refreshCsvFromNetwork({silent}={}) {
+  const btn=$("refreshCsv"); btn.disabled=true; btn.textContent="Fetching…";
+  try {
+    const text=await fetchCsvText();
+    localStorage.setItem(LS_CSV,text); localStorage.setItem(LS_CSV+"_ts",String(Date.now()));
+    updateDataStatus(); renderAvailability();
+    btn.textContent="✅ Done"; setTimeout(()=>{btn.textContent="🔄 Refresh data";btn.disabled=false;},1600);
+  } catch(e) {
+    btn.textContent="❌ Failed"; btn.disabled=false;
+    if(!silent) console.warn(e);
+    setTimeout(()=>btn.textContent="🔄 Refresh data",2000);
+  }
+}
+
+$("refreshCsv").addEventListener("click", ()=>refreshCsvFromNetwork({}));
+$("loadCsv").addEventListener("click", ()=>{
+  const t=$("csv").value.trim(); if(!t) return;
+  localStorage.setItem(LS_CSV,t); localStorage.setItem(LS_CSV+"_ts",String(Date.now()));
+  $("csv").value=""; updateDataStatus(); renderAvailability();
+});
+$("clearCsv").addEventListener("click", ()=>{
+  localStorage.removeItem(LS_CSV); localStorage.removeItem(LS_CSV+"_ts");
+  updateDataStatus(); renderAvailability();
+});
+$("timeStart").addEventListener("change",()=>{renderAvailability();renderWeather();});
+$("timeEnd").addEventListener("change",()=>{renderAvailability();renderWeather();});
+
+// ── INIT ─────────────────────────────────────────────────────
 (function init() {
-  const now = new Date();
-  const iso = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
-  $("date").value = iso;
-
-  // Calendar popup via flatpickr — click the field, calendar drops down.
-  flatpickr("#date", {
-    defaultDate: iso,
-    dateFormat: "Y-m-d",
-    altInput: true,
-    altFormat: "D, M j, Y",
-    onChange: (_, dateStr) => {
-      $("date").value = dateStr;
-      renderAvailability();
-      renderWeather();
-    },
+  const iso=new Date().toISOString().slice(0,10);
+  flatpickr("#date",{
+    defaultDate:iso, dateFormat:"Y-m-d", altInput:true, altFormat:"D, M j Y",
+    onChange:(_,dateStr)=>{ $("date").value=dateStr; renderAvailability(); renderWeather(); }
   });
-
-  $("names").value = localStorage.getItem(LS_NAMES) || "";
-  updateDataStatus();
-  renderAvailability();
-  renderWeather();
-  maybeAutoRefresh();
+  $("names").value=localStorage.getItem(LS_NAMES)||"";
+  updateDataStatus(); renderAvailability(); renderWeather();
+  const ts=parseInt(localStorage.getItem(LS_CSV+"_ts")||"0",10);
+  if(!ts||(Date.now()-ts)/86400000>7) refreshCsvFromNetwork({silent:true});
 })();
 </script>
 </body>
