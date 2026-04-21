@@ -155,6 +155,15 @@ details[open] summary::before { content: "▼ "; }
     <div id="avail"><p style="color:var(--muted); font-size:14px">Select a date above.</p></div>
   </div>
 
+  <!-- FIXTURES -->
+  <div class="card" id="fixtures-card" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="lbl" style="margin:0">📺 On TV</div>
+      <span id="fixtures-live-dot" style="display:none;background:#e53e3e;color:#fff;font-size:10px;padding:2px 9px;border-radius:20px;font-weight:700;letter-spacing:.4px">LIVE</span>
+    </div>
+    <div id="fixtures-content"><div style="color:var(--muted);font-size:13px">Loading…</div></div>
+  </div>
+
   <button class="btn btn-ghost btn-block" id="shareAvail" style="display:none">
     <svg class="wa-svg" width="17" height="17" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
     Share availability
@@ -1088,8 +1097,84 @@ $("clearCsv").addEventListener("click", ()=>{
   localStorage.removeItem(LS_CSV); localStorage.removeItem(LS_CSV+"_ts");
   updateDataStatus(); renderAvailability();
 });
-$("timeStart").addEventListener("change",()=>{renderAvailability();renderWeather();});
-$("timeEnd").addEventListener("change",()=>{renderAvailability();renderWeather();});
+$("timeStart").addEventListener("change",()=>{renderAvailability();renderWeather();renderFixtures();});
+$("timeEnd").addEventListener("change",()=>{renderAvailability();renderWeather();renderFixtures();});
+
+// ── FIXTURES ─────────────────────────────────────────────────
+const FIXTURE_LEAGUES = [
+  { id: 'eng.1',      name: 'Premier League', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { id: 'fifa.world', name: 'World Cup 2026',  flag: '🌍' },
+];
+
+async function renderFixtures() {
+  const dateRaw = $('date').value || new Date().toISOString().slice(0,10);
+  const dateStr = dateRaw.replace(/-/g,'');
+  const card    = $('fixtures-card');
+  const content = $('fixtures-content');
+  card.style.display = '';
+  content.innerHTML  = `<div style="color:var(--muted);font-size:13px">Loading…</div>`;
+
+  const results = await Promise.allSettled(
+    FIXTURE_LEAGUES.map(lg =>
+      fetch(`/api/fixtures?date=${dateStr}&league=${lg.id}`)
+        .then(r=>r.json()).then(d=>({ league:lg, events:d.events||[] }))
+    )
+  );
+
+  const allEvents = results
+    .filter(r=>r.status==='fulfilled')
+    .flatMap(r=>r.value.events.map(e=>({...e,_league:r.value.league})))
+    .sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  const hasLive = allEvents.some(e=>e.status?.type?.name==='STATUS_IN_PROGRESS');
+  $('fixtures-live-dot').style.display = hasLive ? '' : 'none';
+
+  if (!allEvents.length) {
+    content.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:2px 0">No fixtures on this date</div>`;
+    return;
+  }
+
+  const ts = $('timeStart').value;
+  const te = $('timeEnd').value;
+
+  content.innerHTML = allEvents.map(ev=>{
+    const comp  = ev.competitions?.[0];
+    const home  = comp?.competitors?.find(c=>c.homeAway==='home');
+    const away  = comp?.competitors?.find(c=>c.homeAway==='away');
+    const st    = ev.status?.type?.name;
+    const ko    = new Date(ev.date);
+    const hhmm  = `${String(ko.getHours()).padStart(2,'0')}:${String(ko.getMinutes()).padStart(2,'0')}`;
+    const label = ko.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    const clash = ts && te && hhmm >= ts && hhmm <= te;
+
+    let badge='', score='vs';
+    if (st==='STATUS_IN_PROGRESS') {
+      const clk = ev.status?.displayClock ? ` ${ev.status.displayClock}` : '';
+      badge = `<span style="background:#e53e3e;color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700">LIVE${clk}</span>`;
+      score = `${home?.score??0}–${away?.score??0}`;
+    } else if (st==='STATUS_FINAL') {
+      score = `${home?.score??0}–${away?.score??0}`;
+      badge = `<span style="color:var(--muted);font-size:10px">FT</span>`;
+    }
+
+    const homeName = home?.team?.shortDisplayName || home?.team?.displayName || '?';
+    const awayName = away?.team?.shortDisplayName || away?.team?.displayName || '?';
+
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px ${clash?'8px':'0'};
+      ${clash?'background:rgba(220,38,38,.12);border-radius:8px;margin:3px -8px;':'border-bottom:1px solid var(--surface2);'}">
+      <div style="min-width:52px;font-size:11px;font-weight:${clash?700:400};color:${clash?'#f87171':'var(--muted)'}">
+        ${clash?'⚠️ ':''}${label}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          ${homeName} <span style="font-weight:400;color:var(--muted);font-size:12px">${score}</span> ${awayName}
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:1px">${ev._league.flag} ${ev._league.name}</div>
+      </div>
+      <div style="flex-shrink:0">${badge}</div>
+    </div>`;
+  }).join('');
+}
 
 // ── SUPABASE SYNC ─────────────────────────────────────────────
 async function loadFromSupabase() {
@@ -1140,10 +1225,10 @@ function setupRealtime() {
   const iso=new Date().toISOString().slice(0,10);
   flatpickr("#date",{
     defaultDate:iso, dateFormat:"Y-m-d", altInput:true, altFormat:"D, M j Y",
-    onChange:(_,dateStr)=>{ $("date").value=dateStr; renderAvailability(); renderWeather(); }
+    onChange:(_,dateStr)=>{ $("date").value=dateStr; renderAvailability(); renderWeather(); renderFixtures(); }
   });
   await loadFromSupabase();
-  updateDataStatus(); renderAvailability(); renderWeather(); renderStats();
+  updateDataStatus(); renderAvailability(); renderWeather(); renderStats(); renderFixtures();
   setupRealtime();
   const ts=parseInt(localStorage.getItem(LS_CSV+"_ts")||"0",10);
   if(!ts||(Date.now()-ts)/86400000>7) refreshCsvFromNetwork({silent:true});
