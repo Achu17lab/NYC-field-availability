@@ -572,7 +572,9 @@ function shuffle(arr) {
   return a;
 }
 function renderTeams() {
-  const names=$("names").value.split("\n").map(s=>s.trim().replace(/^\d+[.\-)\s:]+/,'').trim()).filter(Boolean);
+  const _lines=$("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  const _numbered=_lines.some(s=>/^\d/.test(s));
+  const names=(_numbered?_lines.filter(s=>/^\d/.test(s)):_lines).map(s=>s.replace(/^\d+[.\-)\s:]+/,'').trim()).filter(Boolean);
   if (names.length<2) { $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none"; currentTeams=null; return; }
   const s=shuffle(names), half=Math.ceil(s.length/2);
   currentTeams={teamA:s.slice(0,half),teamB:s.slice(half)};
