@@ -317,6 +317,13 @@ const LS_NAMES = "dewitt_names_v1";
 const LS_GAMES = "dewitt_games_v1";
 const $ = id => document.getElementById(id);
 
+// ── TIMEZONE — always Eastern Time ───────────────────────────
+const ET      = 'America/New_York';
+const todayET = () => new Date().toLocaleDateString('en-CA', { timeZone: ET }); // → "YYYY-MM-DD"
+const etHHMM  = d  => new Intl.DateTimeFormat('en-US', { timeZone:ET, hour:'2-digit', minute:'2-digit', hour12:false }).format(d);
+const etLabel = d  => new Intl.DateTimeFormat('en-US', { timeZone:ET, hour:'numeric', minute:'2-digit', hour12:true  }).format(d);
+const etPart  = p  => parseInt(new Intl.DateTimeFormat('en-US', { timeZone:ET, [p]:'numeric' }).format(new Date()));
+
 // ── SUPABASE ─────────────────────────────────────────────────
 const SUPABASE_URL = 'https://wkvakrcappcyftdoejjw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_rR4eJsgFCJbDjXDNr41ilA_K513-qgF';
@@ -388,7 +395,7 @@ function getWindow() {
   return { WIN_START: parse($("timeStart").value||"07:30"), WIN_END: parse($("timeEnd").value||"10:30") };
 }
 function fmtDate(iso) {
-  return new Date(iso+"T00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  return new Date(iso+"T12:00:00").toLocaleDateString('en-US',{timeZone:ET,weekday:"short",month:"short",day:"numeric"});
 }
 
 // ── AVAILABILITY ─────────────────────────────────────────────
@@ -464,14 +471,13 @@ async function renderWeather() {
   if (!date) { el.innerHTML=""; return; }
   el.innerHTML = `<div class="weather-chip"><span class="icon">⏳</span><span style="color:var(--muted)">Loading weather…</span></div>`;
   try {
-    const today = new Date(); today.setHours(0,0,0,0);
-    const diff = Math.round((new Date(date+"T00:00")-today)/86400000);
+    const diff = Math.round((new Date(date+"T12:00:00") - new Date(todayET()+"T12:00:00")) / 86400000);
     let mode="forecast", fetchDate=date;
     if (diff<0) { mode="archive"; }
     else if (diff>15) {
       mode="typical";
-      const d=new Date(date+"T00:00"); d.setFullYear(d.getFullYear()-1);
-      fetchDate=d.toISOString().slice(0,10);
+      const [fy,fm,fd] = date.split('-');
+      fetchDate = `${parseInt(fy)-1}-${fm}-${fd}`;
     }
     const base = (mode==="forecast")
       ? "https://api.open-meteo.com/v1/forecast"
@@ -639,7 +645,7 @@ function uid() { return Date.now().toString(36)+Math.random().toString(36).slice
 
 $("lockBtn").addEventListener("click", () => {
   if (!currentTeams) return;
-  const date=$("date").value||new Date().toISOString().slice(0,10);
+  const date=$("date").value||todayET();
   const games=getGames();
   games.unshift({id:uid(),date,teamA:[...currentTeams.teamA],teamB:[...currentTeams.teamB],result:null});
   saveGames(games);
@@ -656,7 +662,7 @@ function selectField(id) {
 
 // ── STATS ─────────────────────────────────────────────────────
 let currentStab = "games";
-let statFilter = { mode: 'all', year: new Date().getFullYear(), month: null };
+let statFilter = { mode: 'all', year: etPart('year'), month: null };
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 function switchStab(name) {
@@ -673,7 +679,7 @@ function switchStab(name) {
 function setStatMode(mode) {
   statFilter.mode = mode;
   if (mode === 'month' && !statFilter.month) {
-    statFilter.month = new Date().getMonth() + 1;
+    statFilter.month = etPart('month');
   }
   updateStatFilterUI();
   renderStats();
@@ -702,7 +708,7 @@ function updateStatFilterUI() {
   const games = getGames();
   // Collect years that appear in game data + current year
   const dataYears = [...new Set(games.map(g => parseInt(g.date.split('-')[0])))];
-  const curYear = new Date().getFullYear();
+  const curYear = etPart('year');
   if (!dataYears.includes(curYear)) dataYears.push(curYear);
   dataYears.sort();
 
@@ -1108,7 +1114,7 @@ const FIXTURE_LEAGUES = [
 ];
 
 async function renderFixtures() {
-  const dateRaw = $('date').value || new Date().toISOString().slice(0,10);
+  const dateRaw = $('date').value || todayET();
   const dateStr = dateRaw.replace(/-/g,'');
   const card    = $('fixtures-card');
   const content = $('fixtures-content');
@@ -1144,8 +1150,8 @@ async function renderFixtures() {
     const away  = comp?.competitors?.find(c=>c.homeAway==='away');
     const st    = ev.status?.type?.name;
     const ko    = new Date(ev.date);
-    const hhmm  = `${String(ko.getHours()).padStart(2,'0')}:${String(ko.getMinutes()).padStart(2,'0')}`;
-    const label = ko.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    const hhmm  = etHHMM(ko);
+    const label = etLabel(ko);
     const clash = ts && te && hhmm >= ts && hhmm <= te;
 
     let badge='', score='vs';
@@ -1223,7 +1229,7 @@ function setupRealtime() {
 
 // ── INIT ─────────────────────────────────────────────────────
 (async function init() {
-  const iso=new Date().toISOString().slice(0,10);
+  const iso=todayET();
   flatpickr("#date",{
     defaultDate:iso, dateFormat:"Y-m-d", altInput:true, altFormat:"D, M j Y",
     onChange:(_,dateStr)=>{ $("date").value=dateStr; renderAvailability(); renderWeather(); renderFixtures(); }
