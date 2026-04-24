@@ -927,7 +927,7 @@ function renderGameBody(g) {
         <div style="color:var(--muted);margin-bottom:6px">Team A</div>
         <div id="sort-A-${g.id}" data-game="${g.id}" data-team="A"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px">${p}<button class="badge-edit" onclick="editPlayerName('${g.id}','A','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:11px;padding:2px 4px;line-height:1;flex-shrink:0" title="Edit name">✏</button><button class="badge-remove remove-player" onclick="removePlayer('${g.id}','A','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:12px;padding:2px 4px;line-height:1;flex-shrink:0">✕</button></span>`).join("")}
+          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px" onclick="showPlayerMenu('${g.id}','A','${p}',this)">${p} <span style="opacity:.4;font-size:9px">▾</span></span>`).join("")}
         </div>
         <div style="display:flex;gap:6px"><input id="addA-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','A')">+</button></div>
       </div>
@@ -935,7 +935,7 @@ function renderGameBody(g) {
         <div style="color:var(--muted);margin-bottom:6px">Team B</div>
         <div id="sort-B-${g.id}" data-game="${g.id}" data-team="B"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px">${p}<button class="badge-edit" onclick="editPlayerName('${g.id}','B','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:11px;padding:2px 4px;line-height:1;flex-shrink:0" title="Edit name">✏</button><button class="badge-remove remove-player" onclick="removePlayer('${g.id}','B','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:12px;padding:2px 4px;line-height:1;flex-shrink:0">✕</button></span>`).join("")}
+          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px" onclick="showPlayerMenu('${g.id}','B','${p}',this)">${p} <span style="opacity:.4;font-size:9px">▾</span></span>`).join("")}
         </div>
         <div style="display:flex;gap:6px"><input id="addB-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','B')">+</button></div>
       </div>
@@ -991,8 +991,8 @@ function saveTeamOrder(gameId) {
   g.teamA = [...elA.querySelectorAll('[data-player]')].map(e => e.dataset.player);
   g.teamB = [...elB.querySelectorAll('[data-player]')].map(e => e.dataset.player);
   // Re-colour badges to match their new team
-  elA.querySelectorAll('[data-player]').forEach(e => { e.className='badge badge-green'; e.style.cssText='cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px'; });
-  elB.querySelectorAll('[data-player]').forEach(e => { e.className='badge badge-yellow'; e.style.cssText='cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px'; });
+  elA.querySelectorAll('[data-player]').forEach(e => { e.className='badge badge-green'; e.style.cssText='cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px'; });
+  elB.querySelectorAll('[data-player]').forEach(e => { e.className='badge badge-yellow'; e.style.cssText='cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px'; });
   saveGames(games);
 }
 
@@ -1065,6 +1065,31 @@ function saveEditGoal(gameId, idx) {
     assist: $(`eg-assist-${gameId}-${idx}`).value||null,
   };
   saveGames(games); renderStats(); $(`gb-${gameId}`).classList.add("open");
+}
+
+function showPlayerMenu(gameId, team, name, el) {
+  document.querySelectorAll('.player-menu').forEach(m => m.remove());
+  const menu = document.createElement('div');
+  menu.className = 'player-menu';
+  menu.style.cssText = 'position:fixed;background:var(--surface2);border-radius:12px;padding:5px;box-shadow:0 6px 24px rgba(0,0,0,.6);z-index:9999;min-width:160px;';
+  menu.innerHTML = `
+    <button onclick="editPlayerName('${gameId}','${team}','${name}');document.querySelectorAll('.player-menu').forEach(m=>m.remove())"
+      style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 14px;background:none;border:none;color:var(--text);font-size:14px;cursor:pointer;border-radius:8px">
+      ✏️ <span>Edit name</span>
+    </button>
+    <button onclick="removePlayer('${gameId}','${team}','${name}');document.querySelectorAll('.player-menu').forEach(m=>m.remove())"
+      style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 14px;background:none;border:none;color:var(--red);font-size:14px;cursor:pointer;border-radius:8px">
+      ✕ <span>Remove</span>
+    </button>`;
+  document.body.appendChild(menu);
+  const r = el.getBoundingClientRect();
+  const left = Math.min(r.left, window.innerWidth - 170);
+  const top  = r.bottom + 6 + window.scrollY;
+  menu.style.left = left + 'px';
+  menu.style.top  = top  + 'px';
+  setTimeout(() => document.addEventListener('click', function close(e) {
+    if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', close); }
+  }), 50);
 }
 
 function editPlayerName(id, team, oldName) {
