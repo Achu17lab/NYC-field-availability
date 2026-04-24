@@ -114,6 +114,13 @@ details[open] summary::before { content: "▼ "; }
 .mo-pill.active { background:var(--green); color:#0a0c0f; border-color:var(--green); font-weight:600; }
 .mo-pill.has-data:not(.active) { color:var(--text); }
 .mo-pill.disabled { opacity:.3; cursor:default; }
+
+/* Mobile responsiveness */
+@media (max-width: 520px) {
+  .game-teams-row { flex-direction: column !important; }
+  .badge { font-size: 13px; padding: 5px 10px; }
+  .badge-edit, .badge-remove { padding: 4px 7px !important; font-size: 12px !important; }
+}
 </style>
 </head>
 <body>
@@ -187,10 +194,22 @@ details[open] summary::before { content: "▼ "; }
 
 <!-- TEAMS -->
 <div id="tab-teams" class="tab">
-  <div class="card">
+
+  <!-- Step 1: enter & lock player list -->
+  <div class="card" id="playersCard">
     <div class="lbl">Players — one per line</div>
     <textarea id="names" placeholder="Alice&#10;Bob&#10;Carol&#10;Dave"></textarea>
-    <div class="row" style="margin-top:10px">
+    <button class="btn btn-primary btn-block" id="lockListBtn" style="margin-top:10px">🔒 Lock player list</button>
+  </div>
+
+  <!-- Step 2: locked — ready to randomize -->
+  <div class="card" id="lockedListCard" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="lbl" style="margin:0">🔒 Players locked</div>
+      <button class="btn btn-ghost btn-sm" id="unlockListBtn">✏ Edit</button>
+    </div>
+    <div id="lockedNamesList" style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:12px"></div>
+    <div class="row">
       <button class="btn btn-primary" id="shuffle">Randomize</button>
       <button class="btn btn-ghost" id="reroll" hidden>Re-roll</button>
     </div>
@@ -566,23 +585,61 @@ function buildAvailText() {
 $("shareAvail").addEventListener("click", () => showModal(buildAvailText()));
 
 // ── TEAMS ─────────────────────────────────────────────────────
+const LS_TEAMS = 'dewitt_teams_v1';
+let listLocked = false;
+let rerollCount = 0;
+
+function getLockedNames() {
+  const _lines=$("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  const _numbered=_lines.some(s=>/^\d/.test(s));
+  return (_numbered?_lines.filter(s=>/^\d/.test(s)):_lines).map(s=>s.replace(/^\d+[.\-)\s:]+/,'').trim()).filter(Boolean);
+}
+function updateListUI() {
+  $("playersCard").style.display   = listLocked ? "none" : "";
+  $("lockedListCard").style.display= listLocked ? "" : "none";
+  if (listLocked) {
+    const names=getLockedNames();
+    $("lockedNamesList").innerHTML=names.map((n,i)=>`${i+1}. ${n}`).join("<br>");
+  }
+}
+function lockList() {
+  if (getLockedNames().length<2) { alert("Add at least 2 players first."); return; }
+  listLocked=true; rerollCount=0;
+  localStorage.setItem("dewitt_listLocked","1");
+  updateListUI();
+}
+function unlockList() {
+  listLocked=false; rerollCount=0; currentTeams=null;
+  localStorage.removeItem("dewitt_listLocked"); localStorage.removeItem(LS_TEAMS);
+  $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none";
+  updateListUI();
+}
+
 function shuffle(arr) {
   const a=arr.slice();
   for (let i=a.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a;
 }
-function renderTeams() {
-  const _lines=$("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
-  const _numbered=_lines.some(s=>/^\d/.test(s));
-  const names=(_numbered?_lines.filter(s=>/^\d/.test(s)):_lines).map(s=>s.replace(/^\d+[.\-)\s:]+/,'').trim()).filter(Boolean);
-  if (names.length<2) { $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none"; currentTeams=null; return; }
-  const s=shuffle(names), half=Math.ceil(s.length/2);
-  currentTeams={teamA:s.slice(0,half),teamB:s.slice(half)};
+function showCurrentTeams() {
+  if (!currentTeams) return;
   $("teamsOut").innerHTML=`<div class="card"><div class="teams-grid">
     <div class="team-card"><h4>Team A (${currentTeams.teamA.length})</h4><ol>${currentTeams.teamA.map(n=>`<li>${n}</li>`).join("")}</ol></div>
     <div class="team-card"><h4>Team B (${currentTeams.teamB.length})</h4><ol>${currentTeams.teamB.map(n=>`<li>${n}</li>`).join("")}</ol></div>
   </div></div>`;
-  $("reroll").hidden=false; $("lockBar").style.display="";
+  $("reroll").hidden=false;
+  $("reroll").innerHTML = rerollCount>0
+    ? `Re-roll <span style="background:var(--surface);border-radius:10px;padding:1px 7px;font-size:10px;margin-left:3px;font-weight:700">${rerollCount}</span>`
+    : "Re-roll";
+  $("lockBar").style.display="";
+}
+function renderTeams(isReroll=false) {
+  if (isReroll) rerollCount++; else rerollCount=0;
+  const names=getLockedNames();
+  if (names.length<2) { $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none"; currentTeams=null; return; }
+  const s=shuffle(names), half=Math.ceil(s.length/2);
+  currentTeams={teamA:s.slice(0,half),teamB:s.slice(half)};
+  localStorage.setItem(LS_TEAMS, JSON.stringify(currentTeams));
+  showCurrentTeams();
 }
 function buildTeamsText() {
   if (!currentTeams) return "";
@@ -594,8 +651,10 @@ function buildTeamsText() {
   currentTeams.teamB.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
   return lines.join("\n");
 }
-$("shuffle").addEventListener("click", renderTeams);
-$("reroll").addEventListener("click", renderTeams);
+$("lockListBtn").addEventListener("click", lockList);
+$("unlockListBtn").addEventListener("click", unlockList);
+$("shuffle").addEventListener("click", () => renderTeams(false));
+$("reroll").addEventListener("click", () => renderTeams(true));
 $("shareTeamsBtn").addEventListener("click", () => showModal(buildTeamsText()));
 $("names").addEventListener("input", () => {
   const val = $("names").value;
@@ -862,12 +921,12 @@ function renderGameBody(g) {
       <input type="date" id="gdate-${g.id}" value="${g.date}" style="flex:1" onchange="saveGameDate('${g.id}')" />
     </div>
     <div class="lbl">Teams <span style="font-weight:400;color:var(--muted);font-size:11px;text-transform:none;letter-spacing:0">— drag to swap</span></div>
-    <div class="row" style="margin-bottom:14px;font-size:13px">
+    <div class="row game-teams-row" style="margin-bottom:14px;font-size:13px">
       <div>
         <div style="color:var(--muted);margin-bottom:6px">Team A</div>
         <div id="sort-A-${g.id}" data-game="${g.id}" data-team="A"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px">${p}<button onclick="editPlayerName('${g.id}','A','${p}')" style="background:none;border:none;color:inherit;opacity:.4;cursor:pointer;font-size:9px;padding:0 1px;line-height:1;flex-shrink:0" title="Edit name">✏</button><button class="remove-player" onclick="removePlayer('${g.id}','A','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:10px;padding:0;line-height:1;flex-shrink:0">✕</button></span>`).join("")}
+          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px">${p}<button class="badge-edit" onclick="editPlayerName('${g.id}','A','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:11px;padding:2px 4px;line-height:1;flex-shrink:0" title="Edit name">✏</button><button class="badge-remove remove-player" onclick="removePlayer('${g.id}','A','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:12px;padding:2px 4px;line-height:1;flex-shrink:0">✕</button></span>`).join("")}
         </div>
         <div style="display:flex;gap:6px"><input id="addA-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','A')">+</button></div>
       </div>
@@ -875,7 +934,7 @@ function renderGameBody(g) {
         <div style="color:var(--muted);margin-bottom:6px">Team B</div>
         <div id="sort-B-${g.id}" data-game="${g.id}" data-team="B"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px">${p}<button onclick="editPlayerName('${g.id}','B','${p}')" style="background:none;border:none;color:inherit;opacity:.4;cursor:pointer;font-size:9px;padding:0 1px;line-height:1;flex-shrink:0" title="Edit name">✏</button><button class="remove-player" onclick="removePlayer('${g.id}','B','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:10px;padding:0;line-height:1;flex-shrink:0">✕</button></span>`).join("")}
+          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:grab;user-select:none;display:inline-flex;align-items:center;gap:3px">${p}<button class="badge-edit" onclick="editPlayerName('${g.id}','B','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:11px;padding:2px 4px;line-height:1;flex-shrink:0" title="Edit name">✏</button><button class="badge-remove remove-player" onclick="removePlayer('${g.id}','B','${p}')" style="background:none;border:none;color:inherit;opacity:.5;cursor:pointer;font-size:12px;padding:2px 4px;line-height:1;flex-shrink:0">✕</button></span>`).join("")}
         </div>
         <div style="display:flex;gap:6px"><input id="addB-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','B')">+</button></div>
       </div>
@@ -1238,6 +1297,17 @@ function setupRealtime() {
   });
   await loadFromSupabase();
   updateDataStatus(); renderAvailability(); renderWeather(); renderStats(); renderFixtures();
+
+  // Restore locked list + teams state
+  if (localStorage.getItem("dewitt_listLocked")) {
+    listLocked = true;
+    updateListUI();
+    try {
+      const saved = localStorage.getItem(LS_TEAMS);
+      if (saved) { currentTeams = JSON.parse(saved); showCurrentTeams(); }
+    } catch {}
+  }
+
   setupRealtime();
   const ts=parseInt(localStorage.getItem(LS_CSV+"_ts")||"0",10);
   if(!ts||(Date.now()-ts)/86400000>7) refreshCsvFromNetwork({silent:true});
