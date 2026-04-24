@@ -710,6 +710,7 @@ $("lockBtn").addEventListener("click", () => {
   const games=getGames();
   games.unshift({id:uid(),date,teamA:[...currentTeams.teamA],teamB:[...currentTeams.teamB],result:null});
   saveGames(games);
+  unlockList(); // reset Teams tab back to blank
   switchTab("stats");
 });
 
