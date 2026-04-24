@@ -694,7 +694,7 @@ function requireAdmin(fn) {
 }
 
 // ── GAMES ─────────────────────────────────────────────────────
-function getGames() { return gamesCache; }
+function getGames() { return [...gamesCache]; }
 function saveGames(newGames) {
   const deletedIds = gamesCache.map(g=>g.id).filter(id=>!newGames.find(g=>g.id===id));
   const toUpsert   = newGames.filter(g=>{ const o=gamesCache.find(o=>o.id===g.id); return !o||JSON.stringify(o)!==JSON.stringify(g); });
