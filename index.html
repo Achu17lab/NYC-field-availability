@@ -838,7 +838,8 @@ function renderStats() {
 
   const stats   = {};   // keyed by lowercase-trimmed name
   const nameMap = {};   // lowercase key → display name (first seen)
-  const nk  = s => (s||'').trim().toLowerCase();          // normalise to key
+  // normalise key: lowercase, strip diacritics, drop everything that isn't a letter/digit
+  const nk  = s => (s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
   const disp= s => (s||'').trim();                        // display form
   const reg = (k,raw) => { if(k&&!nameMap[k]) nameMap[k]=disp(raw); };
   const ensure = k => { if(k&&!stats[k]) stats[k]={goals:0,assists:0,wins:0,draws:0,losses:0}; };
