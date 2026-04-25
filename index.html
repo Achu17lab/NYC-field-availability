@@ -836,40 +836,45 @@ function renderStats() {
   updateStatFilterUI();
   const played = getFilteredPlayed(allPlayed);
 
-  const stats={};
-  const norm = s => (s||'').trim();
-  const ensure = p => { if(p && !stats[p]) stats[p]={goals:0,assists:0,wins:0,draws:0,losses:0}; };
+  const stats   = {};   // keyed by lowercase-trimmed name
+  const nameMap = {};   // lowercase key → display name (first seen)
+  const nk  = s => (s||'').trim().toLowerCase();          // normalise to key
+  const disp= s => (s||'').trim();                        // display form
+  const reg = (k,raw) => { if(k&&!nameMap[k]) nameMap[k]=disp(raw); };
+  const ensure = k => { if(k&&!stats[k]) stats[k]={goals:0,assists:0,wins:0,draws:0,losses:0}; };
+
   for (const g of played) {
-    // Normalize team rosters (trim whitespace, deduplicate)
-    const teamA = [...new Set(g.teamA.map(norm).filter(Boolean))];
-    const teamB = [...new Set(g.teamB.map(norm).filter(Boolean))];
+    // Normalise rosters — same player, any casing → same key
+    const teamA = [...new Set(g.teamA.map(p=>{ const k=nk(p); reg(k,p); return k; }).filter(Boolean))];
+    const teamB = [...new Set(g.teamB.map(p=>{ const k=nk(p); reg(k,p); return k; }).filter(Boolean))];
     const teamASet = new Set(teamA), teamBSet = new Set(teamB);
     const allPlayers = [...new Set([...teamA,...teamB])];
 
-    // Outcome: use saved score as source of truth; fall back to goal event count
+    // Outcome: saved score is source of truth; fall back to goal-event count
     const evA = (g.result.goals||[]).filter(ev=>ev.team==="A").length;
     const evB = (g.result.goals||[]).filter(ev=>ev.team==="B").length;
-    const sA = g.result.scoreA ?? (evA||evB ? evA : null);
-    const sB = g.result.scoreB ?? (evA||evB ? evB : null);
-    const goalsA = sA ?? 0, goalsB = sB ?? 0;
-    const outcome = goalsA>goalsB?"A":goalsB>goalsA?"B":"draw";
+    const sA  = g.result.scoreA ?? (evA||evB ? evA : 0);
+    const sB  = g.result.scoreB ?? (evA||evB ? evB : 0);
+    const outcome = sA>sB?"A":sB>sA?"B":"draw";
 
-    allPlayers.forEach(p=>{
-      ensure(p);
-      if (outcome==="draw")                        stats[p].draws++;
-      else if (outcome==="A"&&teamASet.has(p))     stats[p].wins++;
-      else if (outcome==="A"&&teamBSet.has(p))     stats[p].losses++;
-      else if (outcome==="B"&&teamBSet.has(p))     stats[p].wins++;
-      else if (outcome==="B"&&teamASet.has(p))     stats[p].losses++;
+    allPlayers.forEach(k=>{
+      ensure(k);
+      if (outcome==="draw")                    stats[k].draws++;
+      else if (outcome==="A"&&teamASet.has(k)) stats[k].wins++;
+      else if (outcome==="A"&&teamBSet.has(k)) stats[k].losses++;
+      else if (outcome==="B"&&teamBSet.has(k)) stats[k].wins++;
+      else if (outcome==="B"&&teamASet.has(k)) stats[k].losses++;
     });
 
-    // Goals & assists — normalize names to match roster keys
     (g.result.goals||[]).forEach(ev=>{
-      const p=norm(ev.player); if(!p) return;
-      ensure(p); stats[p].goals++;
-      if (ev.assist) { const a=norm(ev.assist); if(a){ensure(a);stats[a].assists++;} }
+      const k=nk(ev.player); if(!k) return;
+      reg(k,ev.player); ensure(k); stats[k].goals++;
+      if (ev.assist){ const ak=nk(ev.assist); if(ak){reg(ak,ev.assist);ensure(ak);stats[ak].assists++;} }
     });
   }
+
+  // Rebuild entries with display names so leaderboard shows proper casing
+  const entries = Object.entries(stats).map(([k,s])=>[nameMap[k]||k, s]);
 
   if (!allPlayed.length) {
     $("lbSection").style.display="none";
@@ -896,7 +901,6 @@ function renderStats() {
   $("statGames").textContent = played.length;
   $("statGoals").textContent = played.reduce((s,g)=>(g.result?.goals?.length||0)+s, 0);
 
-  const entries=Object.entries(stats);
   const lbRow=([name,s],i,key)=>`<div class="lb-row"><div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-val">${s[key]}</div></div>`;
   $("lbGoals").innerHTML=[...entries].filter(([,s])=>s.goals>0).sort((a,b)=>b[1].goals-a[1].goals).map((e,i)=>lbRow(e,i,"goals")).join("")||`<p style="color:var(--muted);font-size:13px">No goals yet.</p>`;
   $("lbAssists").innerHTML=[...entries].filter(([,s])=>s.assists>0).sort((a,b)=>b[1].assists-a[1].assists).map((e,i)=>lbRow(e,i,"assists")).join("")||`<p style="color:var(--muted);font-size:13px">No assists yet.</p>`;
