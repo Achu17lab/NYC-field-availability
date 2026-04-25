@@ -695,12 +695,13 @@ function requireAdmin(fn) {
 
 // ── GAMES ─────────────────────────────────────────────────────
 function getGames() { return JSON.parse(JSON.stringify(gamesCache)); }
+let _ownSaves = 0; // suppress realtime echo for our own writes
 function saveGames(newGames) {
   const deletedIds = gamesCache.map(g=>g.id).filter(id=>!newGames.find(g=>g.id===id));
   const toUpsert   = newGames.filter(g=>{ const o=gamesCache.find(o=>o.id===g.id); return !o||JSON.stringify(o)!==JSON.stringify(g); });
   gamesCache = newGames;
-  if (deletedIds.length) sb.from('games').delete().in('id',deletedIds).then(()=>{});
-  if (toUpsert.length)   sb.from('games').upsert(toUpsert.map(g=>({id:g.id,data:g}))).then(()=>{});
+  if (deletedIds.length) { _ownSaves++; sb.from('games').delete().in('id',deletedIds).then(()=>{}); }
+  if (toUpsert.length)   { _ownSaves++; sb.from('games').upsert(toUpsert.map(g=>({id:g.id,data:g}))).then(()=>{}); }
 }
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
 
@@ -816,6 +817,7 @@ function gameCard(g) {
 }
 
 function renderStats() {
+  const openIds = new Set([...document.querySelectorAll('[id^="gb-"].open')].map(el=>el.id.slice(3)));
   const games = getGames();
 
   // Games view — always shows all games unfiltered
@@ -901,6 +903,7 @@ function renderStats() {
         <div style="width:100%;padding-left:32px;font-size:11px;color:var(--muted)">${gp}GP · ${s.wins}W · ${s.draws}D · ${s.losses}L · <span style="color:var(--text);font-weight:600">${ga}</span> G+A</div>
       </div>`;
     }).join("")||`<p style="color:var(--muted);font-size:13px">No results yet.</p>`;
+  openIds.forEach(id=>{ const el=$('gb-'+id); if(el) el.classList.add('open'); });
   setTimeout(initSortables, 0);
 }
 
@@ -1304,6 +1307,7 @@ async function loadFromSupabase() {
 function setupRealtime() {
   sb.channel('db-changes')
     .on('postgres_changes', { event:'*', schema:'public', table:'games' }, async () => {
+      if (_ownSaves > 0) { _ownSaves--; return; } // skip echo of our own writes
       const { data } = await sb.from('games').select('id,data').order('created_at',{ascending:false});
       if (data) { gamesCache = data.map(r => r.data); renderStats(); }
     })
