@@ -837,24 +837,37 @@ function renderStats() {
   const played = getFilteredPlayed(allPlayed);
 
   const stats={};
-  const ensure=p=>{ if(!stats[p]) stats[p]={goals:0,assists:0,wins:0,draws:0,losses:0}; };
+  const norm = s => (s||'').trim();
+  const ensure = p => { if(p && !stats[p]) stats[p]={goals:0,assists:0,wins:0,draws:0,losses:0}; };
   for (const g of played) {
-    // Derive outcome from goal counts (independent of the saved scoreline)
-    const goalsA=(g.result.goals||[]).filter(ev=>ev.team==="A").length;
-    const goalsB=(g.result.goals||[]).filter(ev=>ev.team==="B").length;
-    const outcome=goalsA>goalsB?"A":goalsB>goalsA?"B":"draw";
-    const teamASet=new Set(g.teamA), teamBSet=new Set(g.teamB);
-    [...new Set([...g.teamA,...g.teamB])].forEach(p=>{
+    // Normalize team rosters (trim whitespace, deduplicate)
+    const teamA = [...new Set(g.teamA.map(norm).filter(Boolean))];
+    const teamB = [...new Set(g.teamB.map(norm).filter(Boolean))];
+    const teamASet = new Set(teamA), teamBSet = new Set(teamB);
+    const allPlayers = [...new Set([...teamA,...teamB])];
+
+    // Outcome: use saved score as source of truth; fall back to goal event count
+    const evA = (g.result.goals||[]).filter(ev=>ev.team==="A").length;
+    const evB = (g.result.goals||[]).filter(ev=>ev.team==="B").length;
+    const sA = g.result.scoreA ?? (evA||evB ? evA : null);
+    const sB = g.result.scoreB ?? (evA||evB ? evB : null);
+    const goalsA = sA ?? 0, goalsB = sB ?? 0;
+    const outcome = goalsA>goalsB?"A":goalsB>goalsA?"B":"draw";
+
+    allPlayers.forEach(p=>{
       ensure(p);
-      if (outcome==="draw") stats[p].draws++;
-      else if (outcome==="A"&&teamASet.has(p)) stats[p].wins++;
-      else if (outcome==="A"&&teamBSet.has(p)) stats[p].losses++;
-      else if (outcome==="B"&&teamBSet.has(p)) stats[p].wins++;
-      else if (outcome==="B"&&teamASet.has(p)) stats[p].losses++;
+      if (outcome==="draw")                        stats[p].draws++;
+      else if (outcome==="A"&&teamASet.has(p))     stats[p].wins++;
+      else if (outcome==="A"&&teamBSet.has(p))     stats[p].losses++;
+      else if (outcome==="B"&&teamBSet.has(p))     stats[p].wins++;
+      else if (outcome==="B"&&teamASet.has(p))     stats[p].losses++;
     });
+
+    // Goals & assists — normalize names to match roster keys
     (g.result.goals||[]).forEach(ev=>{
-      ensure(ev.player); stats[ev.player].goals++;
-      if (ev.assist) { ensure(ev.assist); stats[ev.assist].assists++; }
+      const p=norm(ev.player); if(!p) return;
+      ensure(p); stats[p].goals++;
+      if (ev.assist) { const a=norm(ev.assist); if(a){ensure(a);stats[a].assists++;} }
     });
   }
 
