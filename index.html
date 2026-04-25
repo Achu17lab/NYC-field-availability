@@ -353,12 +353,28 @@ let currentTeams = null;
 let weatherCache = null;
 
 // ── NAV ──────────────────────────────────────────────────────
-function switchTab(name) {
+const TAB_HASHES = { avail:'field', teams:'teams', stats:'stats' };
+const HASH_TABS  = { field:'avail', teams:'teams', stats:'stats' };
+function switchTab(name, opts) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   $(`tab-${name}`).classList.add('active');
   document.querySelectorAll('.nav button')[{avail:0,teams:1,stats:2}[name]].classList.add('active');
   if (name === 'stats') renderStats();
+  if (!opts?.fromHash) {
+    const hash = '#' + TAB_HASHES[name];
+    if (location.hash !== hash) history.replaceState(null,'',hash);
+  }
+}
+window.addEventListener('hashchange', () => {
+  const tab = HASH_TABS[location.hash.slice(1)];
+  if (tab) switchTab(tab, {fromHash:true});
+});
+
+// shareable URL — points to the current tab
+function appUrl(tab) {
+  const t = tab || HASH_TABS[location.hash.slice(1)] || 'avail';
+  return `${location.origin}${location.pathname}#${TAB_HASHES[t]}`;
 }
 
 // ── CSV ───────────────────────────────────────────────────────
@@ -579,6 +595,7 @@ function buildAvailText() {
     gaps.forEach(([s,e])=>lines.push(`  ✅ ${minToLabel(s)}–${minToLabel(e)}`));
     active.forEach(p=>lines.push(`  ⛔ ${minToLabel(Math.max(p.start.minutes,WIN_START))}–${minToLabel(Math.min(p.end.minutes,WIN_END))} — ${p.org}`));
   }
+  lines.push("", appUrl('avail'));
   return lines.join("\n");
 }
 
@@ -649,6 +666,7 @@ function buildTeamsText() {
   currentTeams.teamA.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
   lines.push("",`Team B (${currentTeams.teamB.length}):`);
   currentTeams.teamB.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
+  lines.push("", appUrl('teams'));
   return lines.join("\n");
 }
 $("lockListBtn").addEventListener("click", lockList);
@@ -1176,6 +1194,7 @@ function shareGame(id) {
     lines.push("","Goals:");
     g.result.goals.forEach(ev=>lines.push(`  ⚽ ${ev.player} (Team ${ev.team})${ev.assist?` 🎯 ${ev.assist}`:""}`));
   }
+  lines.push("", appUrl('stats'));
   showModal(lines.join("\n"));
 }
 
@@ -1357,6 +1376,11 @@ function setupRealtime() {
   }
 
   setupRealtime();
+
+  // open the tab from URL hash if present
+  const initTab = HASH_TABS[location.hash.slice(1)];
+  if (initTab && initTab !== 'avail') switchTab(initTab, {fromHash:true});
+
   const ts=parseInt(localStorage.getItem(LS_CSV+"_ts")||"0",10);
   if(!ts||(Date.now()-ts)/86400000>7) refreshCsvFromNetwork({silent:true});
 })();
