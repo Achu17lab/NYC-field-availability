@@ -1132,33 +1132,21 @@ function showPlayerMenu(gameId, team, name, el) {
 }
 
 function editPlayerName(id, team, oldName) {
-  const container=$(`sort-${team}-${id}`); if(!container) return;
-  const badge=[...container.querySelectorAll('[data-player]')].find(el=>el.dataset.player===oldName);
-  if(!badge) return;
-  const inp=document.createElement('input');
-  inp.value=oldName;
-  inp.style.cssText='font-size:12px;padding:3px 6px;width:90px;border-radius:6px;background:var(--surface);border:1px solid var(--green);color:var(--text);outline:none;';
-  badge.replaceWith(inp);
-  inp.focus(); inp.select();
-  let saved=false;
-  const save=()=>{
-    if(saved) return; saved=true;
-    const newName=inp.value.trim();
-    if(!newName||newName===oldName){renderStats();$(`gb-${id}`).classList.add("open");return;}
-    const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
-    const arr=team==='A'?g.teamA:g.teamB;
-    const i=arr.indexOf(oldName); if(i!==-1) arr[i]=newName;
-    (g.result?.goals||[]).forEach(ev=>{
-      if(ev.player===oldName) ev.player=newName;
-      if(ev.assist===oldName) ev.assist=newName;
-    });
-    saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
-  };
-  inp.addEventListener('blur',save);
-  inp.addEventListener('keydown',e=>{
-    if(e.key==='Enter'){e.preventDefault();save();}
-    if(e.key==='Escape'){saved=true;renderStats();$(`gb-${id}`).classList.add("open");}
+  const input = prompt('Edit player name:', oldName);
+  if (input === null) return;                  // cancelled
+  const newName = input.trim();
+  if (!newName || newName === oldName) return; // no change
+  const games = getGames(), g = games.find(x => x.id === id); if (!g) return;
+  const arr = team === 'A' ? g.teamA : g.teamB;
+  const i = arr.indexOf(oldName);
+  if (i !== -1) arr[i] = newName;
+  (g.result?.goals || []).forEach(ev => {
+    if (ev.player === oldName) ev.player = newName;
+    if (ev.assist === oldName) ev.assist = newName;
   });
+  saveGames(games);
+  renderStats();
+  $(`gb-${id}`).classList.add('open');
 }
 
 function addPlayer(id,team) {
