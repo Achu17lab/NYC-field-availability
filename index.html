@@ -311,6 +311,20 @@ details[open] summary::before { content: "▼ "; }
   </div>
 </div>
 
+<!-- PLAYER EDIT MODAL -->
+<div id="playerModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:200; align-items:center; justify-content:center" onclick="if(event.target===this)closePlayerModal()">
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px; width:340px; max-width:90vw">
+    <div style="font-weight:700; font-size:16px; margin-bottom:4px">Edit player</div>
+    <div id="playerModalSub" style="font-size:13px; color:var(--muted); margin-bottom:14px"></div>
+    <input type="text" id="playerModalInput" placeholder="Player name" autocomplete="off" autocapitalize="words" style="margin-bottom:14px; width:100%; padding:12px; font-size:15px" onkeydown="if(event.key==='Enter')savePlayerModal();if(event.key==='Escape')closePlayerModal()" />
+    <div style="display:flex; gap:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="savePlayerModal()">Save</button>
+      <button class="btn btn-ghost" style="color:var(--red)" onclick="removePlayerFromModal()">Remove</button>
+      <button class="btn btn-ghost" onclick="closePlayerModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- SHARE MODAL -->
 <div id="modal" class="modal-bg" style="display:none" onclick="closeModal(event)">
   <div class="modal">
@@ -869,6 +883,14 @@ function renderStats() {
     const teamASet = new Set(teamA), teamBSet = new Set(teamB);
     const allPlayers = [...new Set([...teamA,...teamB])];
 
+    // Backfill og flag for any existing goal events that don't have it set
+    (g.result.goals||[]).forEach(ev=>{
+      if (ev.og === undefined) {
+        ev.og = (ev.team==='A' && g.teamB.includes(ev.player)) ||
+                (ev.team==='B' && g.teamA.includes(ev.player));
+      }
+    });
+
     // Outcome: saved score is source of truth; fall back to goal-event count
     const evA = (g.result.goals||[]).filter(ev=>ev.team==="A").length;
     const evB = (g.result.goals||[]).filter(ev=>ev.team==="B").length;
@@ -885,9 +907,12 @@ function renderStats() {
       else if (outcome==="B"&&teamASet.has(k)) stats[k].losses++;
     });
 
+    // Own goals (og:true) do NOT count toward the scorer's goal tally; assists still count.
     (g.result.goals||[]).forEach(ev=>{
-      const k=nk(ev.player); if(!k) return;
-      reg(k,ev.player); ensure(k); stats[k].goals++;
+      if (!ev.og) {
+        const k=nk(ev.player);
+        if (k) { reg(k,ev.player); ensure(k); stats[k].goals++; }
+      }
       if (ev.assist){ const ak=nk(ev.assist); if(ak){reg(ak,ev.assist);ensure(ak);stats[ak].assists++;} }
     });
   }
@@ -948,7 +973,7 @@ function renderGameBody(g) {
   const opts=all.map(p=>`<option value="${p}">${p}</option>`).join("");
   const goalsHtml=(g.result?.goals||[]).map((ev,i)=>`
     <div id="goal-row-${g.id}-${i}" style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:13px;border-bottom:1px solid var(--border)">
-      <span>⚽ <strong>${ev.player}</strong> (Team ${ev.team})${ev.assist?` <span style="color:var(--muted)">🎯 ${ev.assist}</span>`:""}</span>
+      <span>⚽ <strong>${ev.player}</strong> (Team ${ev.team})${ev.og?` <span style="color:var(--red);font-weight:700;font-size:11px">OG</span>`:""}${ev.assist?` <span style="color:var(--muted)">🎯 ${ev.assist}</span>`:""}</span>
       <div style="display:flex;gap:4px;margin-left:auto;flex-shrink:0">
         <button onclick="startEditGoal('${g.id}',${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;line-height:1" title="Edit">✏️</button>
         <button onclick="removeGoal('${g.id}',${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;line-height:1">✕</button>
@@ -966,7 +991,7 @@ function renderGameBody(g) {
         <div style="color:var(--muted);margin-bottom:6px">Team A</div>
         <div id="sort-A-${g.id}" data-game="${g.id}" data-team="A"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px" onclick="showPlayerMenu('${g.id}','A','${p}',this)">${p} <span style="opacity:.4;font-size:9px">▾</span></span>`).join("")}
+          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px;padding:6px 10px" onclick="openPlayerModal('${g.id}','A','${p.replace(/'/g,"\\'")}')">${p} <span style="opacity:.5;font-size:10px">✎</span></span>`).join("")}
         </div>
         <div style="display:flex;gap:6px"><input id="addA-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','A')">+</button></div>
       </div>
@@ -974,7 +999,7 @@ function renderGameBody(g) {
         <div style="color:var(--muted);margin-bottom:6px">Team B</div>
         <div id="sort-B-${g.id}" data-game="${g.id}" data-team="B"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px" onclick="showPlayerMenu('${g.id}','B','${p}',this)">${p} <span style="opacity:.4;font-size:9px">▾</span></span>`).join("")}
+          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px;padding:6px 10px" onclick="openPlayerModal('${g.id}','B','${p.replace(/'/g,"\\'")}')">${p} <span style="opacity:.5;font-size:10px">✎</span></span>`).join("")}
         </div>
         <div style="display:flex;gap:6px"><input id="addB-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','B')">+</button></div>
       </div>
@@ -1046,13 +1071,20 @@ function saveScore(id) {
   });
 }
 
+// Returns true if `player` belongs to the team NOT credited with the goal.
+function isOwnGoal(g, player, team) {
+  return (team === 'A' && g.teamB.includes(player)) ||
+         (team === 'B' && g.teamA.includes(player));
+}
+
 function addGoal(id) {
   requireAdmin(() => {
     const player=$(`gPlayer-${id}`).value, team=$(`gTeam-${id}`).value, assist=$(`gAssist-${id}`).value||null;
     if(!player) return;
     const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
     if(!g.result) g.result={scoreA:0,scoreB:0,goals:[]};
-    g.result.goals.push({player,team,assist});
+    const og = isOwnGoal(g, player, team);
+    g.result.goals.push({player,team,assist,og});
     saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
   });
 }
@@ -1098,56 +1130,51 @@ function startEditGoal(gameId, idx) {
 function saveEditGoal(gameId, idx) {
   const games=getGames(), g=games.find(x=>x.id===gameId);
   if (!g?.result?.goals?.[idx]) return;
-  g.result.goals[idx]={
-    player: $(`eg-player-${gameId}-${idx}`).value,
-    team:   $(`eg-team-${gameId}-${idx}`).value,
-    assist: $(`eg-assist-${gameId}-${idx}`).value||null,
-  };
+  const player = $(`eg-player-${gameId}-${idx}`).value;
+  const team   = $(`eg-team-${gameId}-${idx}`).value;
+  const assist = $(`eg-assist-${gameId}-${idx}`).value||null;
+  g.result.goals[idx] = { player, team, assist, og: isOwnGoal(g, player, team) };
   saveGames(games); renderStats(); $(`gb-${gameId}`).classList.add("open");
 }
 
-function showPlayerMenu(gameId, team, name, el) {
-  document.querySelectorAll('.player-menu').forEach(m => m.remove());
-  const menu = document.createElement('div');
-  menu.className = 'player-menu';
-  menu.style.cssText = 'position:fixed;background:var(--surface2);border-radius:12px;padding:5px;box-shadow:0 6px 24px rgba(0,0,0,.6);z-index:9999;min-width:160px;';
-  menu.innerHTML = `
-    <button onclick="editPlayerName('${gameId}','${team}','${name}');document.querySelectorAll('.player-menu').forEach(m=>m.remove())"
-      style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 14px;background:none;border:none;color:var(--text);font-size:14px;cursor:pointer;border-radius:8px">
-      ✏️ <span>Edit name</span>
-    </button>
-    <button onclick="removePlayer('${gameId}','${team}','${name}');document.querySelectorAll('.player-menu').forEach(m=>m.remove())"
-      style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 14px;background:none;border:none;color:var(--red);font-size:14px;cursor:pointer;border-radius:8px">
-      ✕ <span>Remove</span>
-    </button>`;
-  document.body.appendChild(menu);
-  const r = el.getBoundingClientRect();
-  const left = Math.min(r.left, window.innerWidth - 170);
-  const top  = r.bottom + 6 + window.scrollY;
-  menu.style.left = left + 'px';
-  menu.style.top  = top  + 'px';
-  setTimeout(() => document.addEventListener('click', function close(e) {
-    if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', close); }
-  }), 50);
+// player edit modal — centred, large-tap-target, mobile-friendly
+let _playerCtx = null;
+function openPlayerModal(gameId, team, name) {
+  _playerCtx = { gameId, team, oldName: name };
+  $('playerModalSub').textContent = `Team ${team} — current: ${name}`;
+  $('playerModalInput').value = name;
+  $('playerModal').style.display = 'flex';
+  setTimeout(() => { $('playerModalInput').focus(); $('playerModalInput').select(); }, 80);
 }
-
-function editPlayerName(id, team, oldName) {
-  const input = prompt('Edit player name:', oldName);
-  if (input === null) return;                  // cancelled
-  const newName = input.trim();
-  if (!newName || newName === oldName) return; // no change
-  const games = getGames(), g = games.find(x => x.id === id); if (!g) return;
+function closePlayerModal() {
+  $('playerModal').style.display = 'none';
+  _playerCtx = null;
+}
+function savePlayerModal() {
+  if (!_playerCtx) return;
+  const { gameId, team, oldName } = _playerCtx;
+  const newName = $('playerModalInput').value.trim();
+  closePlayerModal();
+  if (!newName || newName === oldName) return;
+  const games = getGames(), g = games.find(x => x.id === gameId); if (!g) return;
   const arr = team === 'A' ? g.teamA : g.teamB;
-  const i = arr.indexOf(oldName);
-  if (i !== -1) arr[i] = newName;
+  const i = arr.indexOf(oldName); if (i !== -1) arr[i] = newName;
   (g.result?.goals || []).forEach(ev => {
     if (ev.player === oldName) ev.player = newName;
     if (ev.assist === oldName) ev.assist = newName;
   });
   saveGames(games);
   renderStats();
-  $(`gb-${id}`).classList.add('open');
+  $(`gb-${gameId}`).classList.add('open');
 }
+function removePlayerFromModal() {
+  if (!_playerCtx) return;
+  const { gameId, team, oldName } = _playerCtx;
+  closePlayerModal();
+  removePlayer(gameId, team, oldName);
+}
+// kept for backward compat if anything calls it
+function editPlayerName(id, team, oldName) { openPlayerModal(id, team, oldName); }
 
 function addPlayer(id,team) {
   const inp=$(`add${team}-${id}`), name=inp.value.trim(); if(!name) return;
@@ -1180,7 +1207,7 @@ function shareGame(id) {
   lines.push("",`Team A: ${g.teamA.join(", ")}`,`Team B: ${g.teamB.join(", ")}`);
   if(g.result?.goals?.length) {
     lines.push("","Goals:");
-    g.result.goals.forEach(ev=>lines.push(`  ⚽ ${ev.player} (Team ${ev.team})${ev.assist?` 🎯 ${ev.assist}`:""}`));
+    g.result.goals.forEach(ev=>lines.push(`  ⚽ ${ev.player} (Team ${ev.team}${ev.og?' — OG':''})${ev.assist?` 🎯 ${ev.assist}`:""}`));
   }
   lines.push("", appUrl('stats'));
   showModal(lines.join("\n"));
