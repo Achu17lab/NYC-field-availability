@@ -883,14 +883,6 @@ function renderStats() {
     const teamASet = new Set(teamA), teamBSet = new Set(teamB);
     const allPlayers = [...new Set([...teamA,...teamB])];
 
-    // Backfill og flag for any existing goal events that don't have it set
-    (g.result.goals||[]).forEach(ev=>{
-      if (ev.og === undefined) {
-        ev.og = (ev.team==='A' && g.teamB.includes(ev.player)) ||
-                (ev.team==='B' && g.teamA.includes(ev.player));
-      }
-    });
-
     // Outcome: saved score is source of truth; fall back to goal-event count
     const evA = (g.result.goals||[]).filter(ev=>ev.team==="A").length;
     const evB = (g.result.goals||[]).filter(ev=>ev.team==="B").length;
@@ -1348,6 +1340,24 @@ async function loadFromSupabase() {
     } else if (gData) {
       gamesCache = gData.map(r => r.data);
       if (nData) { $('names').value = nData.value; localStorage.setItem(LS_NAMES, nData.value); }
+    }
+
+    // Backfill og flag on any pre-existing goal events that don't have it, then save back
+    const changed = [];
+    gamesCache.forEach(g => {
+      if (!g.result?.goals) return;
+      let touched = false;
+      g.result.goals.forEach(ev => {
+        if (ev.og === undefined) {
+          ev.og = (ev.team==='A' && (g.teamB||[]).includes(ev.player)) ||
+                  (ev.team==='B' && (g.teamA||[]).includes(ev.player));
+          touched = true;
+        }
+      });
+      if (touched) changed.push(g);
+    });
+    if (changed.length) {
+      await sb.from('games').upsert(changed.map(g=>({id:g.id,data:g})));
     }
   } catch(e) {
     console.warn('Supabase load failed, falling back to localStorage:', e);
