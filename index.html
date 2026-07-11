@@ -1034,6 +1034,10 @@ function initSortables() {
       group: `g-${gameId}`,
       animation: 150,
       ghostClass: 'sortable-ghost',
+      // On touch, wait 250ms + a small move before starting drag — a quick tap fires the click handler instead
+      delay: 250,
+      delayOnTouchOnly: true,
+      touchStartThreshold: 5,
       onEnd: () => saveTeamOrder(gameId),
     });
   });
