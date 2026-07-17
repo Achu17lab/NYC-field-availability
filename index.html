@@ -110,6 +110,14 @@ details[open] summary::before { content: "▼ "; }
 .field-chip.active { background:rgba(34,197,94,.12); color:var(--green); border-color:var(--green); }
 .field-chip:not(.active):hover { border-color: var(--text); color: var(--text); }
 
+.squad-row { display:flex; align-items:center; gap:6px; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.squad-row:last-child { border-bottom:none; }
+.squad-name { flex:1; min-width:0; font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pos-pill { padding:5px 10px; border-radius:14px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.5px; cursor:pointer; user-select:none; }
+.pos-pill.primary   { background:#22c55e; color:#fff; border-color:#22c55e; }
+.pos-pill.secondary { background:transparent; color:#22c55e; border-color:#22c55e; }
+.pos-pill:active { transform:scale(.94); }
+
 .mo-pill { padding:5px 11px; border-radius:20px; border:1px solid var(--border); font-size:12px; cursor:pointer; transition:all .15s; background:transparent; color:var(--muted); }
 .mo-pill.active { background:var(--green); color:#0a0c0f; border-color:var(--green); font-weight:600; }
 .mo-pill.has-data:not(.active) { color:var(--text); }
@@ -132,6 +140,7 @@ details[open] summary::before { content: "▼ "; }
 <nav class="nav">
   <button class="active" onclick="switchTab('avail')">Field</button>
   <button onclick="switchTab('teams')">Teams</button>
+  <button onclick="switchTab('squad')">Squad</button>
   <button onclick="switchTab('stats')">Stats</button>
 </nav>
 
@@ -198,7 +207,8 @@ details[open] summary::before { content: "▼ "; }
   <!-- Step 1: enter & lock player list -->
   <div class="card" id="playersCard">
     <div class="lbl">Players — one per line</div>
-    <textarea id="names" placeholder="Alice&#10;Bob&#10;Carol&#10;Dave"></textarea>
+    <textarea id="names" placeholder="Alice&#10;Bob (def)&#10;Carol (str, mid)&#10;Dave"></textarea>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4">💡 For new players, add position in brackets: <strong style="color:var(--text)">(def)</strong>, <strong style="color:var(--text)">(str)</strong>, or <strong style="color:var(--text)">(mid)</strong>. First = primary, second = secondary. Everyone else's positions come from the <strong style="color:var(--text)">Squad</strong> tab.</div>
     <button class="btn btn-primary btn-block" id="lockListBtn" style="margin-top:10px">🔒 Lock player list</button>
   </div>
 
@@ -223,6 +233,22 @@ details[open] summary::before { content: "▼ "; }
       <svg class="wa-svg" width="17" height="17" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
       Share teams
     </button>
+  </div>
+</div>
+
+<!-- SQUAD -->
+<div id="tab-squad" class="tab">
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="lbl" style="margin:0">Squad positions</div>
+      <div style="font-size:11px;color:var(--muted)">🥅 def · ⚙️ mid · ⚡ str</div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.4">
+      Tap a pill to set your <strong style="color:var(--text)">Primary</strong> position. Tap again for
+      <strong style="color:var(--text)">Secondary</strong>. Third tap clears it. Used to balance random teams.
+    </div>
+    <input type="text" id="squadSearch" placeholder="Search player…" oninput="renderSquad()" style="margin-bottom:10px" />
+    <div id="squadList"></div>
   </div>
 </div>
 
@@ -367,14 +393,15 @@ let currentTeams = null;
 let weatherCache = null;
 
 // ── NAV ──────────────────────────────────────────────────────
-const TAB_HASHES = { avail:'field', teams:'teams', stats:'stats' };
-const HASH_TABS  = { field:'avail', teams:'teams', stats:'stats' };
+const TAB_HASHES = { avail:'field', teams:'teams', squad:'squad', stats:'stats' };
+const HASH_TABS  = { field:'avail', teams:'teams', squad:'squad', stats:'stats' };
 function switchTab(name, opts) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   $(`tab-${name}`).classList.add('active');
-  document.querySelectorAll('.nav button')[{avail:0,teams:1,stats:2}[name]].classList.add('active');
+  document.querySelectorAll('.nav button')[{avail:0,teams:1,squad:2,stats:3}[name]].classList.add('active');
   if (name === 'stats') renderStats();
+  if (name === 'squad') renderSquad();
   if (!opts?.fromHash) {
     const hash = '#' + TAB_HASHES[name];
     if (location.hash !== hash) history.replaceState(null,'',hash);
@@ -615,15 +642,162 @@ function buildAvailText() {
 
 $("shareAvail").addEventListener("click", () => showModal(buildAvailText()));
 
+// Name-key: strip diacritics, lowercase, drop everything that isn't a letter/digit.
+// Used everywhere player names are grouped (stats, positions, etc.) so "Sai Karthik", "SaiKarthik", "saikarthik" all match.
+const nk = s => (s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+
+// ── POSITIONS ─────────────────────────────────────────────────
+// positions[normalizedKey] = { display, primary: 'STR'|'MID'|'DEF'|null, secondary: same|null }
+let positions = {};
+
+function normalizePos(token) {
+  const s = (token||'').toLowerCase().trim();
+  if (/^(str|strk|striker|fwd|forward|attack|attacker|f|st)$/.test(s)) return 'STR';
+  if (/^(mid|midfield|midfielder|cm|dm|am|m)$/.test(s))                 return 'MID';
+  if (/^(def|defense|defender|cb|lb|rb|d|gk|goal|goalkeeper|keeper)$/.test(s)) return 'DEF';
+  return null;
+}
+
+// Extract "Name (pos1, pos2)" from a raw roster line. Returns { name, primary, secondary }.
+function extractPosHint(rawName) {
+  const m = rawName.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+  if (!m) return { name: rawName.trim(), primary:null, secondary:null };
+  const cleanName = m[1].trim();
+  const posList = m[2].split(/[,;/|\s]+/).map(normalizePos).filter(Boolean);
+  return { name: cleanName, primary: posList[0]||null, secondary: posList[1]||null };
+}
+
+async function savePositions() {
+  try { await sb.from('config').upsert({ key:'positions', value: JSON.stringify(positions) }); } catch(e){ console.warn('positions save failed', e); }
+}
+
+// Cycle order for pill taps: nothing → primary → secondary → nothing
+function togglePosition(nameKey, pos) {
+  const rec = positions[nameKey] || { display: nameKey, primary:null, secondary:null };
+  const currentState = rec.primary === pos ? 'primary' : rec.secondary === pos ? 'secondary' : 'none';
+  if (currentState === 'none') {
+    // becoming primary — if another is already primary, demote it? no, just replace.
+    rec.primary = pos;
+    if (rec.secondary === pos) rec.secondary = null;
+  } else if (currentState === 'primary') {
+    // primary → secondary
+    rec.primary = null;
+    rec.secondary = pos;
+  } else {
+    // secondary → clear
+    rec.secondary = null;
+  }
+  positions[nameKey] = rec;
+  savePositions();
+  renderSquad();
+}
+
+// Build the union of players: current roster (with hints stripped) + everyone in game history + everyone with position data
+function getAllKnownPlayers() {
+  const acc = {};                          // key → display
+  const add = raw => {
+    const { name } = extractPosHint(raw);
+    const k = nk(name); if (!k) return;
+    if (!acc[k]) acc[k] = name;
+  };
+  getLockedNames().forEach(add);
+  (gamesCache||[]).forEach(g => { (g.teamA||[]).forEach(add); (g.teamB||[]).forEach(add); });
+  Object.entries(positions).forEach(([k,rec]) => { if (!acc[k]) acc[k] = rec.display || k; });
+  return Object.entries(acc).sort((a,b) => a[1].localeCompare(b[1])); // [ [key, display], ... ]
+}
+
+function renderSquad() {
+  const container = $('squadList'); if (!container) return;
+  const search = ($('squadSearch')?.value || '').toLowerCase().trim();
+  const players = getAllKnownPlayers().filter(([,d]) => !search || d.toLowerCase().includes(search));
+  if (!players.length) { container.innerHTML = `<p style="color:var(--muted);font-size:13px">No players yet. Add names in the Teams tab.</p>`; return; }
+  container.innerHTML = players.map(([k, disp]) => {
+    const rec = positions[k] || {};
+    const pill = pos => {
+      const cls = rec.primary === pos ? 'primary' : rec.secondary === pos ? 'secondary' : '';
+      const label = pos === 'STR' ? '⚡ Str' : pos === 'MID' ? '⚙️ Mid' : '🥅 Def';
+      return `<button class="pos-pill ${cls}" onclick="togglePosition('${k}','${pos}')">${label}</button>`;
+    };
+    return `<div class="squad-row">
+      <div class="squad-name">${disp}</div>
+      ${pill('DEF')}${pill('MID')}${pill('STR')}
+    </div>`;
+  }).join('');
+}
+
+// Position "score" for a player — used by balanced shuffle. Primary = 2, secondary = 1.
+function positionScore(name) {
+  const rec = positions[nk(extractPosHint(name).name)] || {};
+  const s = { STR:0, MID:0, DEF:0 };
+  if (rec.primary)   s[rec.primary]   += 2;
+  if (rec.secondary) s[rec.secondary] += 1;
+  return s;
+}
+
+function balancedShuffle(players) {
+  // Deterministic shuffle
+  const shuffled = players.slice().sort(() => Math.random() - 0.5);
+  // Deal position-known players FIRST so unknowns fill the tail (better balance)
+  const strength = n => { const s = positionScore(n); return s.STR + s.MID + s.DEF; };
+  shuffled.sort((a,b) => strength(b) - strength(a));
+
+  const teamA = [], teamB = [];
+  const totA = { STR:0, MID:0, DEF:0 }, totB = { STR:0, MID:0, DEF:0 };
+  const imbalance = (a,b) => Math.abs(a.STR-b.STR) + Math.abs(a.MID-b.MID) + Math.abs(a.DEF-b.DEF);
+
+  for (const name of shuffled) {
+    const s = positionScore(name);
+    // Hard rule: keep team sizes within 1
+    if (teamA.length - teamB.length >= 1) {
+      teamB.push(name); totB.STR+=s.STR; totB.MID+=s.MID; totB.DEF+=s.DEF;
+      continue;
+    }
+    if (teamB.length - teamA.length >= 1) {
+      teamA.push(name); totA.STR+=s.STR; totA.MID+=s.MID; totA.DEF+=s.DEF;
+      continue;
+    }
+    // Equal sizes — choose the team that improves position balance
+    const afterA = { STR: totA.STR+s.STR, MID: totA.MID+s.MID, DEF: totA.DEF+s.DEF };
+    const afterB = { STR: totB.STR+s.STR, MID: totB.MID+s.MID, DEF: totB.DEF+s.DEF };
+    const costA = imbalance(afterA, totB);
+    const costB = imbalance(totA, afterB);
+    if (costA < costB || (costA === costB && Math.random() < 0.5)) {
+      teamA.push(name); totA.STR+=s.STR; totA.MID+=s.MID; totA.DEF+=s.DEF;
+    } else {
+      teamB.push(name); totB.STR+=s.STR; totB.MID+=s.MID; totB.DEF+=s.DEF;
+    }
+  }
+  return { teamA, teamB };
+}
+
 // ── TEAMS ─────────────────────────────────────────────────────
 const LS_TEAMS = 'dewitt_teams_v1';
 let listLocked = false;
 let rerollCount = 0;
 
+// Parse roster lines: strip leading "1." numbering AND any "(pos)" hint. Position hints auto-save.
 function getLockedNames() {
-  const _lines=$("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
-  const _numbered=_lines.some(s=>/^\d/.test(s));
-  return (_numbered?_lines.filter(s=>/^\d/.test(s)):_lines).map(s=>s.replace(/^\d+[.\-)\s:]+/,'').trim()).filter(Boolean);
+  const _lines = $("names").value.split("\n").map(s => s.trim()).filter(Boolean);
+  const _numbered = _lines.some(s => /^\d/.test(s));
+  const filtered = _numbered ? _lines.filter(s => /^\d/.test(s)) : _lines;
+  const raw = filtered.map(s => s.replace(/^\d+[.\-)\s:]+/, '').trim()).filter(Boolean);
+
+  let touched = false;
+  const cleanNames = raw.map(rawName => {
+    const { name, primary, secondary } = extractPosHint(rawName);
+    if (primary || secondary) {
+      const k = nk(name); if (k) {
+        const prev = positions[k];
+        const rec = { display: name, primary: primary || prev?.primary || null, secondary: secondary || prev?.secondary || null };
+        if (!prev || prev.primary !== rec.primary || prev.secondary !== rec.secondary || prev.display !== rec.display) {
+          positions[k] = rec; touched = true;
+        }
+      }
+    }
+    return name;
+  });
+  if (touched) savePositions();
+  return cleanNames;
 }
 function updateListUI() {
   $("playersCard").style.display   = listLocked ? "none" : "";
@@ -667,8 +841,7 @@ function renderTeams(isReroll=false) {
   if (isReroll) rerollCount++; else rerollCount=0;
   const names=getLockedNames();
   if (names.length<2) { $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none"; currentTeams=null; return; }
-  const s=shuffle(names), half=Math.ceil(s.length/2);
-  currentTeams={teamA:s.slice(0,half),teamB:s.slice(half)};
+  currentTeams = balancedShuffle(names);
   localStorage.setItem(LS_TEAMS, JSON.stringify(currentTeams));
   showCurrentTeams();
 }
@@ -870,8 +1043,7 @@ function renderStats() {
 
   const stats   = {};   // keyed by lowercase-trimmed name
   const nameMap = {};   // lowercase key → display name (first seen)
-  // normalise key: lowercase, strip diacritics, drop everything that isn't a letter/digit
-  const nk  = s => (s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  // nk (name-key) hoisted to module scope; disp = display trim
   const disp= s => (s||'').trim();                        // display form
   const reg = (k,raw) => { if(k&&!nameMap[k]) nameMap[k]=disp(raw); };
   const ensure = k => { if(k&&!stats[k]) stats[k]={goals:0,assists:0,wins:0,draws:0,losses:0}; };
@@ -1324,10 +1496,12 @@ async function renderFixtures() {
 // ── SUPABASE SYNC ─────────────────────────────────────────────
 async function loadFromSupabase() {
   try {
-    const [{ data: gData }, { data: nData }] = await Promise.all([
+    const [{ data: gData }, { data: nData }, { data: pData }] = await Promise.all([
       sb.from('games').select('id,data').order('created_at', { ascending: false }),
-      sb.from('config').select('value').eq('key','names').maybeSingle()
+      sb.from('config').select('value').eq('key','names').maybeSingle(),
+      sb.from('config').select('value').eq('key','positions').maybeSingle(),
     ]);
+    if (pData) { try { positions = JSON.parse(pData.value) || {}; } catch { positions = {}; } }
 
     if (gData && gData.length === 0) {
       // Supabase empty — one-time migration from localStorage
@@ -1378,8 +1552,13 @@ function setupRealtime() {
       if (data) { gamesCache = data.map(r => r.data); renderStats(); }
     })
     .on('postgres_changes', { event:'*', schema:'public', table:'config' }, async () => {
-      const { data } = await sb.from('config').select('value').eq('key','names').maybeSingle();
-      if (data) $('names').value = data.value;
+      const [{ data: nData }, { data: pData }] = await Promise.all([
+        sb.from('config').select('value').eq('key','names').maybeSingle(),
+        sb.from('config').select('value').eq('key','positions').maybeSingle(),
+      ]);
+      if (nData) $('names').value = nData.value;
+      if (pData) { try { positions = JSON.parse(pData.value) || {}; } catch {} }
+      if ($('tab-squad')?.classList.contains('active')) renderSquad();
     })
     .subscribe();
 }
