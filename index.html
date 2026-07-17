@@ -734,6 +734,18 @@ function positionScore(name) {
   return s;
 }
 
+// Short position label for display, e.g. "Def" / "Def+Mid" / "" for unlabeled
+function posLabel(name) {
+  const rec = positions[nk(extractPosHint(name).name)] || {};
+  const short = p => p === 'STR' ? 'Str' : p === 'MID' ? 'Mid' : 'Def';
+  if (rec.primary && rec.secondary) return `${short(rec.primary)}+${short(rec.secondary)}`;
+  if (rec.primary) return short(rec.primary);
+  if (rec.secondary) return `${short(rec.secondary)}²`;
+  return '';
+}
+
+let lastShuffleReasons = [];   // [{name, team, reason}] from the most recent randomize
+
 function balancedShuffle(players) {
   // Deterministic shuffle
   const shuffled = players.slice().sort(() => Math.random() - 0.5);
@@ -744,16 +756,31 @@ function balancedShuffle(players) {
   const teamA = [], teamB = [];
   const totA = { STR:0, MID:0, DEF:0 }, totB = { STR:0, MID:0, DEF:0 };
   const imbalance = (a,b) => Math.abs(a.STR-b.STR) + Math.abs(a.MID-b.MID) + Math.abs(a.DEF-b.DEF);
+  const reasons = [];
 
   for (const name of shuffled) {
     const s = positionScore(name);
+    const lbl = posLabel(name);
     // Hard rule: keep team sizes within 1
     if (teamA.length - teamB.length >= 1) {
       teamB.push(name); totB.STR+=s.STR; totB.MID+=s.MID; totB.DEF+=s.DEF;
+      reasons.push({ name, team:'B', reason:`→ B to even out team sizes${lbl?` (${lbl})`:''}` });
       continue;
     }
     if (teamB.length - teamA.length >= 1) {
       teamA.push(name); totA.STR+=s.STR; totA.MID+=s.MID; totA.DEF+=s.DEF;
+      reasons.push({ name, team:'A', reason:`→ A to even out team sizes${lbl?` (${lbl})`:''}` });
+      continue;
+    }
+    if (!lbl) {
+      // No position data — pure random placement
+      if (Math.random() < 0.5) {
+        teamA.push(name);
+        reasons.push({ name, team:'A', reason:'→ A by random pick (no position set)' });
+      } else {
+        teamB.push(name);
+        reasons.push({ name, team:'B', reason:'→ B by random pick (no position set)' });
+      }
       continue;
     }
     // Equal sizes — choose the team that improves position balance
@@ -761,13 +788,22 @@ function balancedShuffle(players) {
     const afterB = { STR: totB.STR+s.STR, MID: totB.MID+s.MID, DEF: totB.DEF+s.DEF };
     const costA = imbalance(afterA, totB);
     const costB = imbalance(totA, afterB);
-    if (costA < costB || (costA === costB && Math.random() < 0.5)) {
+    if (costA < costB) {
       teamA.push(name); totA.STR+=s.STR; totA.MID+=s.MID; totA.DEF+=s.DEF;
+      reasons.push({ name, team:'A', reason:`→ A: ${lbl} needed there for balance` });
+    } else if (costB < costA) {
+      teamB.push(name); totB.STR+=s.STR; totB.MID+=s.MID; totB.DEF+=s.DEF;
+      reasons.push({ name, team:'B', reason:`→ B: ${lbl} needed there for balance` });
+    } else if (Math.random() < 0.5) {
+      teamA.push(name); totA.STR+=s.STR; totA.MID+=s.MID; totA.DEF+=s.DEF;
+      reasons.push({ name, team:'A', reason:`→ A by coin flip (${lbl} balanced either way)` });
     } else {
       teamB.push(name); totB.STR+=s.STR; totB.MID+=s.MID; totB.DEF+=s.DEF;
+      reasons.push({ name, team:'B', reason:`→ B by coin flip (${lbl} balanced either way)` });
     }
   }
-  return { teamA, teamB };
+  lastShuffleReasons = reasons;
+  return { teamA, teamB, totals: { A: totA, B: totB } };
 }
 
 // ── TEAMS ─────────────────────────────────────────────────────
@@ -827,10 +863,20 @@ function shuffle(arr) {
 }
 function showCurrentTeams() {
   if (!currentTeams) return;
+  const tag = n => { const l = posLabel(n); return l ? ` <span style="font-size:10px;color:var(--muted);font-weight:600">${l}</span>` : ''; };
+  const t = currentTeams.totals;
+  const balanceLine = t ? `<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Position weight — A: 🥅${t.A.DEF} ⚙️${t.A.MID} ⚡${t.A.STR} · B: 🥅${t.B.DEF} ⚙️${t.B.MID} ⚡${t.B.STR}</div>` : '';
+  const reasonsHtml = lastShuffleReasons.length ? `
+    <details style="margin-top:10px">
+      <summary style="font-size:12px;color:var(--muted);cursor:pointer">🧠 Why these teams?</summary>
+      <div style="padding:8px 0 0;font-size:12px;color:var(--muted);line-height:1.7">
+        ${lastShuffleReasons.map(r=>`<div><strong style="color:var(--text)">${r.name}</strong> ${r.reason}</div>`).join('')}
+      </div>
+    </details>` : '';
   $("teamsOut").innerHTML=`<div class="card"><div class="teams-grid">
-    <div class="team-card"><h4>Team A (${currentTeams.teamA.length})</h4><ol>${currentTeams.teamA.map(n=>`<li>${n}</li>`).join("")}</ol></div>
-    <div class="team-card"><h4>Team B (${currentTeams.teamB.length})</h4><ol>${currentTeams.teamB.map(n=>`<li>${n}</li>`).join("")}</ol></div>
-  </div></div>`;
+    <div class="team-card"><h4>Team A (${currentTeams.teamA.length})</h4><ol>${currentTeams.teamA.map(n=>`<li>${n}${tag(n)}</li>`).join("")}</ol></div>
+    <div class="team-card"><h4>Team B (${currentTeams.teamB.length})</h4><ol>${currentTeams.teamB.map(n=>`<li>${n}${tag(n)}</li>`).join("")}</ol></div>
+  </div>${balanceLine}${reasonsHtml}</div>`;
   $("reroll").hidden=false;
   $("reroll").innerHTML = rerollCount>0
     ? `Re-roll <span style="background:var(--surface);border-radius:10px;padding:1px 7px;font-size:10px;margin-left:3px;font-weight:700">${rerollCount}</span>`
