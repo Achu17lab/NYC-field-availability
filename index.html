@@ -865,6 +865,7 @@ $("names").addEventListener("input", () => {
   const val = $("names").value;
   localStorage.setItem(LS_NAMES, val);
   sb.from('config').upsert({key:'names',value:val}).then(()=>{});
+  getLockedNames(); // parse any "(str, mid)" hints immediately so they land in the Squad tab
 });
 
 // ── ADMIN AUTH ────────────────────────────────────────────────
