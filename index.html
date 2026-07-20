@@ -1148,12 +1148,54 @@ function lockList() {
   listLocked=true; rerollCount=0;
   localStorage.setItem("dewitt_listLocked","1");
   updateListUI();
+  saveDraft();
 }
 function unlockList() {
   listLocked=false; rerollCount=0; currentTeams=null;
   localStorage.removeItem("dewitt_listLocked"); localStorage.removeItem(LS_TEAMS);
   $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none";
   updateListUI();
+  saveDraft();
+}
+
+// ── SHARED DRAFT ──────────────────────────────────────────────
+// The locked-list + randomized-teams state lives in Supabase (config key 'draft')
+// so every device sees the same roll and anyone can re-roll or lock the game.
+let _lastDraftJson = null;
+
+function saveDraft() {
+  const val = (listLocked || currentTeams)
+    ? JSON.stringify({ locked: listLocked, teams: currentTeams, reasons: lastShuffleReasons, rerolls: rerollCount })
+    : '';
+  if (val === _lastDraftJson) return;
+  _lastDraftJson = val;
+  sb.from('config').upsert({ key:'draft', value: val }).then(()=>{});
+}
+
+function applyDraft(val) {
+  const v = val || '';
+  if (v === _lastDraftJson) return;   // our own echo or no change
+  _lastDraftJson = v;
+  if (!v) {
+    // Draft cleared elsewhere (game created / list unlocked)
+    listLocked=false; rerollCount=0; currentTeams=null; lastShuffleReasons=[];
+    localStorage.removeItem("dewitt_listLocked"); localStorage.removeItem(LS_TEAMS);
+    $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none";
+    updateListUI();
+    return;
+  }
+  try {
+    const d = JSON.parse(v);
+    listLocked = !!d.locked;
+    rerollCount = d.rerolls || 0;
+    lastShuffleReasons = d.reasons || [];
+    currentTeams = d.teams || null;
+    if (listLocked) localStorage.setItem("dewitt_listLocked","1"); else localStorage.removeItem("dewitt_listLocked");
+    if (currentTeams) localStorage.setItem(LS_TEAMS, JSON.stringify(currentTeams)); else localStorage.removeItem(LS_TEAMS);
+    updateListUI();
+    if (currentTeams) showCurrentTeams();
+    else { $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none"; }
+  } catch(e) { console.warn('bad draft', e); }
 }
 
 function shuffle(arr) {
@@ -1206,6 +1248,7 @@ function renderTeams(isReroll=false) {
   currentTeams = balancedShuffle(names);
   localStorage.setItem(LS_TEAMS, JSON.stringify(currentTeams));
   showCurrentTeams();
+  saveDraft(); // share this roll with every device
 }
 function buildTeamsText() {
   if (!currentTeams) return "";
@@ -1870,14 +1913,18 @@ async function renderFixtures() {
 }
 
 // ── SUPABASE SYNC ─────────────────────────────────────────────
+let _draftFromLoad = null;   // shared draft fetched during load; null = Supabase unreachable
+
 async function loadFromSupabase() {
   try {
-    const [{ data: gData }, { data: nData }, { data: pData }] = await Promise.all([
+    const [{ data: gData }, { data: nData }, { data: pData }, { data: dData }] = await Promise.all([
       sb.from('games').select('id,data').order('created_at', { ascending: false }),
       sb.from('config').select('value').eq('key','names').maybeSingle(),
       sb.from('config').select('value').eq('key','positions').maybeSingle(),
+      sb.from('config').select('value').eq('key','draft').maybeSingle(),
     ]);
     if (pData) { try { positions = JSON.parse(pData.value) || {}; } catch { positions = {}; } }
+    _draftFromLoad = dData ? (dData.value || '') : '';
 
     if (gData && gData.length === 0) {
       // Supabase empty — one-time migration from localStorage
@@ -1928,12 +1975,14 @@ function setupRealtime() {
       if (data) { gamesCache = data.map(r => r.data); renderStats(); }
     })
     .on('postgres_changes', { event:'*', schema:'public', table:'config' }, async () => {
-      const [{ data: nData }, { data: pData }] = await Promise.all([
+      const [{ data: nData }, { data: pData }, { data: dData }] = await Promise.all([
         sb.from('config').select('value').eq('key','names').maybeSingle(),
         sb.from('config').select('value').eq('key','positions').maybeSingle(),
+        sb.from('config').select('value').eq('key','draft').maybeSingle(),
       ]);
-      if (nData) $('names').value = nData.value;
+      if (nData && document.activeElement !== $('names')) $('names').value = nData.value;
       if (pData) { try { positions = JSON.parse(pData.value) || {}; } catch {} }
+      applyDraft(dData ? (dData.value || '') : '');
       if ($('tab-squad')?.classList.contains('active')) renderSquad();
     })
     .subscribe();
@@ -1949,8 +1998,11 @@ function setupRealtime() {
   await loadFromSupabase();
   updateDataStatus(); renderAvailability(); renderWeather(); renderStats(); renderFixtures();
 
-  // Restore locked list + teams state
-  if (localStorage.getItem("dewitt_listLocked")) {
+  // Restore locked list + teams state — shared draft from Supabase wins;
+  // localStorage is only the offline fallback.
+  if (_draftFromLoad !== null) {
+    applyDraft(_draftFromLoad);
+  } else if (localStorage.getItem("dewitt_listLocked")) {
     listLocked = true;
     updateListUI();
     try {
