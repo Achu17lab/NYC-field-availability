@@ -39,14 +39,22 @@ body {
   background-attachment: fixed;
   color: var(--text); min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
 }
+
+/* Icon system — single stroke language, inherits currentColor */
+.icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -3px; flex-shrink: 0; }
+.lbl .icon { width: 13px; height: 13px; vertical-align: -2px; margin-right: 5px; }
+.btn .icon { width: 15px; height: 15px; }
 
 @keyframes rise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
 @keyframes sheetUp { from { transform:translateY(40px); opacity:.4; } to { transform:none; opacity:1; } }
 
-.app-header { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
-.app-header h1 { font-size: 19px; font-weight: 700; }
-.app-header p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+/* App shell — compact top bar with wordmark */
+.topbar { display: flex; align-items: center; gap: 10px; max-width: 640px; margin: 0 auto; padding: 14px 16px 10px; }
+.topbar img { width: 30px; height: 30px; }
+.wordmark { font-size: 14px; font-weight: 800; letter-spacing: .16em; }
+.wordmark b { color: var(--green2); }
 
 .nav {
   display: flex; gap: 3px; padding: 4px; border-radius: 14px;
@@ -57,11 +65,27 @@ body {
   border: 1px solid var(--border);
   box-shadow: 0 8px 28px rgba(0,0,0,.4);
 }
-.nav button { flex: 1; padding: 9px 4px; border: none; border-radius: 10px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .18s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 4px; border: none; border-radius: 10px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .18s; white-space: nowrap; }
+.nav button .icon { width: 15px; height: 15px; }
 .nav button.active {
   background: linear-gradient(135deg, rgba(34,197,94,.16), rgba(16,185,129,.08));
   color: var(--green2);
   box-shadow: inset 0 0 0 1px rgba(34,197,94,.3);
+}
+
+/* Mobile: native-app bottom tab bar */
+@media (max-width: 639px) {
+  .nav {
+    position: fixed; top: auto; bottom: 0; left: 0; right: 0;
+    max-width: none; margin: 0; border-radius: 0;
+    border-left: none; border-right: none; border-bottom: none;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    background: rgba(10,13,18,.92);
+  }
+  .nav button { flex-direction: column; gap: 4px; font-size: 10px; font-weight: 600; padding: 5px 2px; letter-spacing: .02em; }
+  .nav button .icon { width: 21px; height: 21px; }
+  .nav button.active { box-shadow: none; background: transparent; }
+  .tab { padding-bottom: 104px; }
 }
 
 .tab { display: none; padding: 12px 16px 60px; max-width: 640px; margin: 0 auto; }
@@ -166,6 +190,28 @@ details[open] summary::before { content: "▼ "; }
 .mo-pill.has-data:not(.active) { color:var(--text); }
 .mo-pill.disabled { opacity:.3; cursor:default; }
 
+/* Scoreboard game cards */
+.sb-grid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; width: 100%; }
+.sb-team { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-team.win { color: var(--green2); }
+.sb-team:first-child { text-align: right; }
+.sb-score { font-size: 23px; font-weight: 800; display: flex; gap: 7px; align-items: baseline; line-height: 1; }
+.sb-score .sep { color: var(--muted); font-weight: 400; font-size: 15px; }
+.sb-vs { font-size: 11px; color: var(--muted); font-weight: 700; padding: 3px 12px; border: 1px solid var(--border2); border-radius: 14px; letter-spacing: .08em; }
+.sb-meta { display: flex; justify-content: center; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); margin-top: 7px; }
+.sb-meta .icon { width: 11px; height: 11px; }
+
+/* Skeleton shimmer */
+@keyframes shimmer { to { background-position: -200% 0; } }
+.skel { background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: shimmer 1.3s linear infinite; border-radius: 8px; }
+
+/* Empty states */
+.empty { text-align: center; padding: 24px 12px; }
+.empty-ico { width: 44px; height: 44px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; color: var(--muted); }
+.empty-ico .icon { width: 20px; height: 20px; }
+.empty-t { font-weight: 700; font-size: 14px; }
+.empty-s { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
 /* Balance meter */
 .balance-wrap { margin-top: 12px; padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; }
 .balance-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; font-size: 13px; }
@@ -202,15 +248,44 @@ details[open] summary::before { content: "▼ "; }
 </head>
 <body>
 
-<div class="app-header" style="text-align:center; padding:18px 16px 6px">
-  <img src="logo.svg" alt="Sports Day" width="88" height="88" style="display:block; margin:0 auto 2px" />
-</div>
+<!-- Icon sprite — one consistent stroke set, used everywhere via <use> -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4c0-.6.4-1 1-1h13l-2 5 2 5H5"/></symbol>
+  <symbol id="i-shirt" viewBox="0 0 24 24"><path d="M9 3 5 5 2 9l3 2v10h14V11l3-2-3-4-4-2a4 4 0 0 1-6 0z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 13.6a6.5 6.5 0 0 1 4 6.4"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20v-8M11 20V5M17 20v-5M3 20h18"/></symbol>
+  <symbol id="i-ball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.2l4.4 3.2-1.7 5.2H9.3l-1.7-5.2z"/><path d="M12 3v4.2M20.6 9.3l-4.2 1.1M17.3 19.6l-2.6-4M6.7 19.6l2.6-4M3.4 9.3l4.2 1.1"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a1 1 0 0 0-1 1c0 2.2 1.8 4 4 4M17 6h3a1 1 0 0 1 1 1c0 2.2-1.8 4-4 4"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M8 21h8M5 7h14"/><path d="M5 7l-2.2 5.5a2.7 2.7 0 0 0 4.4 0zM19 7l-2.2 5.5a2.7 2.7 0 0 0 4.4 0z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M17 3l4 4L8 20l-5 1 1-5z"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h2a4 4 0 0 0 3.3-1.7L12.7 7.7A4 4 0 0 1 16 6h6"/><path d="M2 6h2a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6a4 4 0 0 1-3.3-1.8l-.4-.5"/></symbol>
+  <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="m8 2 4 4 4-4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v6"/></symbol>
+  <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+</svg>
+
+<header class="topbar">
+  <img src="logo.svg" alt="Sports Day" />
+  <span class="wordmark">SPORTS <b>DAY</b></span>
+</header>
 
 <nav class="nav">
-  <button class="active" onclick="switchTab('avail')">Field</button>
-  <button onclick="switchTab('teams')">Teams</button>
-  <button onclick="switchTab('squad')">Squad</button>
-  <button onclick="switchTab('stats')">Stats</button>
+  <button class="active" onclick="switchTab('avail')"><svg class="icon"><use href="#i-flag"/></svg><span>Field</span></button>
+  <button onclick="switchTab('teams')"><svg class="icon"><use href="#i-shuffle"/></svg><span>Teams</span></button>
+  <button onclick="switchTab('squad')"><svg class="icon"><use href="#i-users"/></svg><span>Squad</span></button>
+  <button onclick="switchTab('stats')"><svg class="icon"><use href="#i-chart"/></svg><span>Stats</span></button>
 </nav>
 
 <!-- AVAILABILITY -->
@@ -218,7 +293,7 @@ details[open] summary::before { content: "▼ "; }
   <div class="card">
     <div class="lbl">Field</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="field-chip active" data-field="dewitt" onclick="selectField('dewitt')">🏟️ DeWitt Clinton</button>
+      <button class="field-chip active" data-field="dewitt" onclick="selectField('dewitt')"><svg class="icon" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-flag"/></svg> DeWitt Clinton</button>
     </div>
   </div>
 
@@ -238,13 +313,13 @@ details[open] summary::before { content: "▼ "; }
       <div class="lbl" style="margin:0">Field availability</div>
       <div id="fieldBadge"></div>
     </div>
-    <div id="avail"><p style="color:var(--muted); font-size:14px">Select a date above.</p></div>
+    <div id="avail"><div class="empty"><div class="empty-ico"><svg class="icon"><use href="#i-calendar"/></svg></div><div class="empty-t">Pick a date</div><div class="empty-s">Field availability will show here</div></div></div>
   </div>
 
   <!-- FIXTURES -->
   <div class="card" id="fixtures-card" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div class="lbl" style="margin:0">📺 On TV</div>
+      <div class="lbl" style="margin:0"><svg class="icon"><use href="#i-tv"/></svg>On TV</div>
       <span id="fixtures-live-dot" style="display:none;background:#e53e3e;color:#fff;font-size:10px;padding:2px 9px;border-radius:20px;font-weight:700;letter-spacing:.4px">LIVE</span>
     </div>
     <div id="fixtures-content"><div style="color:var(--muted);font-size:13px">Loading…</div></div>
@@ -259,7 +334,7 @@ details[open] summary::before { content: "▼ "; }
     <summary id="dataStatus">No data loaded</summary>
     <div style="padding:12px 0 0">
       <p style="font-size:13px; color:var(--muted); margin-bottom:10px">Source: <a href="https://www.nycgovparks.org/permits/field-and-court/issued/M022/csv" target="_blank" style="color:var(--green)">NYC Parks CSV</a></p>
-      <button class="btn btn-primary btn-block" id="refreshCsv">🔄 Refresh data</button>
+      <button class="btn btn-primary btn-block" id="refreshCsv"><svg class="icon"><use href="#i-rotate"/></svg>Refresh data</button>
       <p style="font-size:12px; color:var(--muted); margin:12px 0 6px">Manual fallback — paste CSV:</p>
       <textarea id="csv" placeholder='"Start","End","Field",...' style="min-height:70px"></textarea>
       <div class="row" style="margin-top:8px">
@@ -278,14 +353,14 @@ details[open] summary::before { content: "▼ "; }
     <div class="lbl">Players — one per line</div>
     <textarea id="names" placeholder="Alice&#10;Bob (def)&#10;Carol (str, mid)&#10;Dave"></textarea>
     <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4">💡 For new players, add position in brackets: <strong style="color:var(--text)">(def)</strong>, <strong style="color:var(--text)">(str)</strong>, or <strong style="color:var(--text)">(mid)</strong>. First = primary, second = secondary. Everyone else's positions come from the <strong style="color:var(--text)">Squad</strong> tab.</div>
-    <button class="btn btn-primary btn-block" id="lockListBtn" style="margin-top:10px">🔒 Lock player list</button>
+    <button class="btn btn-primary btn-block" id="lockListBtn" style="margin-top:10px"><svg class="icon"><use href="#i-lock"/></svg>Lock player list</button>
   </div>
 
   <!-- Step 2: locked — ready to randomize -->
   <div class="card" id="lockedListCard" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div class="lbl" style="margin:0">🔒 Players locked</div>
-      <button class="btn btn-ghost btn-sm" id="unlockListBtn">✏ Edit</button>
+      <div class="lbl" style="margin:0"><svg class="icon"><use href="#i-lock"/></svg>Players locked</div>
+      <button class="btn btn-ghost btn-sm" id="unlockListBtn"><svg class="icon"><use href="#i-pencil"/></svg>Edit</button>
     </div>
     <div id="lockedNamesList" style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:12px"></div>
     <div class="row">
@@ -297,7 +372,7 @@ details[open] summary::before { content: "▼ "; }
   <div id="teamsOut"></div>
 
   <div id="lockBar" style="display:none">
-    <button class="btn btn-primary btn-block" id="lockBtn" style="margin-bottom:8px">📌 Lock & create game</button>
+    <button class="btn btn-primary btn-block" id="lockBtn" style="margin-bottom:8px"><svg class="icon"><use href="#i-plus"/></svg>Lock &amp; create game</button>
     <button class="btn btn-ghost btn-block" id="shareTeamsBtn">
       <svg class="wa-svg" width="17" height="17" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
       Share teams
@@ -310,7 +385,7 @@ details[open] summary::before { content: "▼ "; }
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div class="lbl" style="margin:0">Squad positions</div>
-      <div style="font-size:11px;color:var(--muted)">🥅 def · ⚙️ mid · ⚡ str</div>
+      <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px"><span><svg class="icon" style="width:12px;height:12px"><use href="#i-shield"/></svg> def</span><span><svg class="icon" style="width:12px;height:12px"><use href="#i-gear"/></svg> mid</span><span><svg class="icon" style="width:12px;height:12px"><use href="#i-zap"/></svg> str</span></div>
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.4">
       Tap a pill to set your <strong style="color:var(--text)">Primary</strong> position. Tap again for
@@ -333,11 +408,11 @@ details[open] summary::before { content: "▼ "; }
   <!-- GAMES VIEW -->
   <div id="stab-games-view">
     <div class="card">
-      <div class="lbl" style="color:var(--yellow)">Upcoming</div>
+      <div class="lbl" style="color:var(--yellow)"><svg class="icon"><use href="#i-clock"/></svg>Upcoming</div>
       <div id="gamesUpcoming"><p style="color:var(--muted);font-size:14px">No upcoming games.</p></div>
     </div>
     <div class="card">
-      <div class="lbl" style="color:var(--green)">Played</div>
+      <div class="lbl" style="color:var(--green)"><svg class="icon"><use href="#i-check"/></svg>Played</div>
       <div id="gamesPlayed"><p style="color:var(--muted);font-size:14px">No played games yet.</p></div>
     </div>
   </div>
@@ -373,15 +448,15 @@ details[open] summary::before { content: "▼ "; }
         </div>
       </div>
       <div class="card">
-        <div class="lbl">⚽ Top scorers</div>
+        <div class="lbl"><svg class="icon"><use href="#i-ball"/></svg>Top scorers</div>
         <div id="lbGoals"></div>
       </div>
       <div class="card">
-        <div class="lbl">🎯 Top assists</div>
+        <div class="lbl"><svg class="icon"><use href="#i-target"/></svg>Top assists</div>
         <div id="lbAssists"></div>
       </div>
       <div class="card">
-        <div class="lbl">🏆 Points table</div>
+        <div class="lbl"><svg class="icon"><use href="#i-trophy"/></svg>Points table</div>
         <div id="lbWins"></div>
       </div>
     </div>
@@ -395,7 +470,7 @@ details[open] summary::before { content: "▼ "; }
 <!-- PASSWORD MODAL -->
 <div id="pwModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:200; align-items:center; justify-content:center">
   <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px; width:300px; max-width:88vw">
-    <div style="font-weight:700; font-size:16px; margin-bottom:4px">🔒 Admin access</div>
+    <div style="font-weight:700; font-size:16px; margin-bottom:4px"><svg class="icon"><use href="#i-lock"/></svg> Admin access</div>
     <div style="font-size:13px; color:var(--muted); margin-bottom:14px">Score and goals are admin-only.</div>
     <input type="password" id="pwInput" placeholder="Password" style="margin-bottom:8px" onkeydown="if(event.key==='Enter')submitPw()" />
     <div id="pwError" style="display:none; color:var(--red); font-size:13px; margin-bottom:8px">Wrong password — try again.</div>
@@ -439,7 +514,7 @@ details[open] summary::before { content: "▼ "; }
     </div>
     <pre id="modalText"></pre>
     <div class="row">
-      <button class="btn btn-ghost" id="modalCopy">📋 Copy</button>
+      <button class="btn btn-ghost" id="modalCopy"><svg class="icon"><use href="#i-copy"/></svg>Copy</button>
       <button class="btn btn-ghost" id="modalWa">
         <svg class="wa-svg" width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
         WhatsApp
@@ -454,6 +529,11 @@ const LS_CSV   = "dewitt_csv_v1";
 const LS_NAMES = "dewitt_names_v1";
 const LS_GAMES = "dewitt_games_v1";
 const $ = id => document.getElementById(id);
+
+// Icon + empty-state helpers (icon sprite lives at top of <body>)
+const icon = (n, s) => `<svg class="icon"${s?` style="width:${s}px;height:${s}px"`:''}><use href="#i-${n}"/></svg>`;
+const emptyState = (ico, title, sub) => `<div class="empty"><div class="empty-ico">${icon(ico)}</div><div class="empty-t">${title}</div>${sub?`<div class="empty-s">${sub}</div>`:''}</div>`;
+const skelRows = (n, h=34) => Array.from({length:n}, () => `<div class="skel" style="height:${h}px;margin-bottom:8px"></div>`).join('');
 
 // ── TIMEZONE — always Eastern Time ───────────────────────────
 const ET      = 'America/New_York';
@@ -794,7 +874,7 @@ function renderSquad() {
     const rec = positions[k] || {};
     const pill = pos => {
       const cls = rec.primary === pos ? 'primary' : rec.secondary === pos ? 'secondary' : '';
-      const label = pos === 'STR' ? '⚡ Str' : pos === 'MID' ? '⚙️ Mid' : '🥅 Def';
+      const label = pos === 'STR' ? `${icon('zap',11)} Str` : pos === 'MID' ? `${icon('gear',11)} Mid` : `${icon('shield',11)} Def`;
       return `<button class="pos-pill ${cls}" onclick="togglePosition('${k}','${pos}')">${label}</button>`;
     };
     return `<div class="squad-row">
@@ -912,7 +992,7 @@ function openProfile(encName) {
   const p = computeProfile(key);
   const rec = positions[key] || {};
   const posBits = [];
-  const posName = x => x==='STR'?'⚡ Striker':x==='MID'?'⚙️ Midfield':'🥅 Defense';
+  const posName = x => x==='STR'?`${icon('zap',11)} Striker`:x==='MID'?`${icon('gear',11)} Midfield`:`${icon('shield',11)} Defense`;
   if (rec.primary) posBits.push(`${posName(rec.primary)}`);
   if (rec.secondary) posBits.push(`${posName(rec.secondary)} (2nd)`);
 
@@ -953,12 +1033,12 @@ function openProfile(encName) {
       <div class="stat-tile"><b>${p.goals + p.assists}</b><span>G+A</span></div>
       <div class="stat-tile"><b>${p.gp ? ((p.goals+p.assists)/p.gp).toFixed(1) : '0.0'}</b><span>G+A / gm</span></div>
     </div>
-    ${p.ogs ? `<div style="font-size:12px;color:var(--muted);margin:-6px 0 12px">🫣 ${p.ogs} own goal${p.ogs>1?'s':''} — it happens to the best of us</div>` : ''}
+    ${p.ogs ? `<div style="font-size:12px;color:var(--muted);margin:-6px 0 12px">${p.ogs} own goal${p.ogs>1?'s':''} — it happens to the best of us</div>` : ''}
     <div class="lbl">Form — last ${last5.length || 5} games</div>
     <div style="margin-bottom:16px">${formHtml}</div>
-    <div class="lbl">🤝 Best chemistry — played together</div>
+    <div class="lbl">${icon('users')}Best chemistry — played together</div>
     <div style="margin-bottom:16px">${h2h(p.mates, 'with')}</div>
-    <div class="lbl">⚔️ Rivals — played against</div>
+    <div class="lbl">${icon('crosshair')}Rivals — played against</div>
     <div>${h2h(p.opps, 'against')}</div>`;
   $('profileModal').style.display = 'flex';
 }
@@ -1091,19 +1171,20 @@ function showCurrentTeams() {
   const balanceLine = `
     <div class="balance-wrap">
       <div class="balance-top">
-        <span>⚖️</span>
+        ${icon('scale',15)}
         <strong style="color:hsl(${hue},70%,55%)">${bal.score === null ? '—' : bal.score + '%'}</strong>
-        <span style="color:var(--muted)">${v.label} ${v.emoji}</span>
+        <span style="color:var(--muted)">${v.label}</span>
       </div>
       <div class="balance-bar"><div class="balance-fill" style="width:${pct}%;background:linear-gradient(90deg,hsl(${Math.max(0,hue-25)},70%,45%),hsl(${hue},70%,50%))"></div></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:8px">
-        A: 🥅${bal.tA.DEF} ⚙️${bal.tA.MID} ⚡${bal.tA.STR} &nbsp;·&nbsp; B: 🥅${bal.tB.DEF} ⚙️${bal.tB.MID} ⚡${bal.tB.STR}
-        &nbsp;·&nbsp; ${bal.labeled}/${bal.total} players have positions
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center">
+        <span>A · ${icon('shield',11)}${bal.tA.DEF} ${icon('gear',11)}${bal.tA.MID} ${icon('zap',11)}${bal.tA.STR}</span>
+        <span>B · ${icon('shield',11)}${bal.tB.DEF} ${icon('gear',11)}${bal.tB.MID} ${icon('zap',11)}${bal.tB.STR}</span>
+        <span>${bal.labeled}/${bal.total} players have positions</span>
       </div>
     </div>`;
   const reasonsHtml = lastShuffleReasons.length ? `
     <details style="margin-top:10px">
-      <summary style="font-size:12px;color:var(--muted);cursor:pointer">🧠 Why these teams?</summary>
+      <summary style="font-size:12px;color:var(--muted);cursor:pointer">${icon('info',12)} Why these teams?</summary>
       <div style="padding:8px 0 0;font-size:12px;color:var(--muted);line-height:1.7">
         ${lastShuffleReasons.map(r=>`<div><strong style="color:var(--text)">${r.name}</strong> ${r.reason}</div>`).join('')}
       </div>
@@ -1292,14 +1373,19 @@ function getFilteredPlayed(played) {
 
 function gameCard(g) {
   const played = g.result !== null;
-  const scoreStr = played ? `${g.result.scoreA} – ${g.result.scoreB}` : "vs";
+  const sA = g.result?.scoreA, sB = g.result?.scoreB;
+  const aWin = played && sA > sB, bWin = played && sB > sA;
+  const center = played
+    ? `<div class="sb-score">${sA ?? 0}<span class="sep">–</span>${sB ?? 0}</div>`
+    : `<div class="sb-vs">VS</div>`;
   return `<div class="game-card" id="gc-${g.id}">
-    <div class="game-header" onclick="toggleGame('${g.id}')">
-      <div style="flex:1">
-        <div class="game-score">Team A ${scoreStr} Team B</div>
-        <div class="game-date">${fmtDate(g.date)}</div>
+    <div class="game-header" onclick="toggleGame('${g.id}')" style="flex-direction:column;gap:0">
+      <div class="sb-grid">
+        <div class="sb-team${aWin ? ' win' : ''}">Team A</div>
+        ${center}
+        <div class="sb-team${bWin ? ' win' : ''}">Team B</div>
       </div>
-      <span style="color:var(--muted);margin-left:4px">›</span>
+      <div class="sb-meta">${icon('calendar')} ${fmtDate(g.date)}</div>
     </div>
     <div class="game-body" id="gb-${g.id}">${renderGameBody(g)}</div>
   </div>`;
@@ -1315,11 +1401,11 @@ function renderStats() {
 
   $("gamesUpcoming").innerHTML = upcoming.length
     ? upcoming.map(gameCard).join("")
-    : `<p style="color:var(--muted);font-size:14px">No upcoming games.</p>`;
+    : emptyState('clock', 'No upcoming games', 'Lock a roster in Teams to schedule one');
 
   $("gamesPlayed").innerHTML = allPlayed.length
     ? allPlayed.map(gameCard).join("")
-    : `<p style="color:var(--muted);font-size:14px">No played games yet.</p>`;
+    : emptyState('ball', 'No games played yet', 'Results appear here after your first game');
 
   // Season stats leaderboard — uses filtered played games
   updateStatFilterUI();
@@ -1426,9 +1512,9 @@ function renderGameBody(g) {
   const opts=all.map(p=>`<option value="${p}">${p}</option>`).join("");
   const goalsHtml=(g.result?.goals||[]).map((ev,i)=>`
     <div id="goal-row-${g.id}-${i}" style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:13px;border-bottom:1px solid var(--border)">
-      <span>⚽ <strong>${ev.player}</strong> (Team ${ev.team})${ev.og?` <span style="color:var(--red);font-weight:700;font-size:11px">OG</span>`:""}${ev.assist?` <span style="color:var(--muted)">🎯 ${ev.assist}</span>`:""}</span>
+      <span>${icon('ball',13)} <strong>${ev.player}</strong> (Team ${ev.team})${ev.og?` <span style="color:var(--red);font-weight:700;font-size:11px">OG</span>`:""}${ev.assist?` <span style="color:var(--muted)">${icon('target',12)} ${ev.assist}</span>`:""}</span>
       <div style="display:flex;gap:4px;margin-left:auto;flex-shrink:0">
-        <button onclick="startEditGoal('${g.id}',${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;line-height:1" title="Edit">✏️</button>
+        <button onclick="startEditGoal('${g.id}',${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;line-height:1" title="Edit">${icon('pencil',12)}</button>
         <button onclick="removeGoal('${g.id}',${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;line-height:1">✕</button>
       </div>
     </div>`).join("")||`<p style="color:var(--muted);font-size:13px;padding:4px 0">No goals recorded.</p>`;
@@ -1444,7 +1530,7 @@ function renderGameBody(g) {
         <div style="color:var(--muted);margin-bottom:6px">Team A</div>
         <div id="sort-A-${g.id}" data-game="${g.id}" data-team="A"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px;padding:6px 10px" onclick="openPlayerModal('${g.id}','A','${p.replace(/'/g,"\\'")}')">${p} <span style="opacity:.5;font-size:10px">✎</span></span>`).join("")}
+          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px" onclick="openPlayerModal('${g.id}','A','${p.replace(/'/g,"\\'")}')">${p} <span style="opacity:.5">${icon('pencil',10)}</span></span>`).join("")}
         </div>
         <div style="display:flex;gap:6px"><input id="addA-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','A')">+</button></div>
       </div>
@@ -1452,19 +1538,19 @@ function renderGameBody(g) {
         <div style="color:var(--muted);margin-bottom:6px">Team B</div>
         <div id="sort-B-${g.id}" data-game="${g.id}" data-team="B"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px;padding:6px 10px" onclick="openPlayerModal('${g.id}','B','${p.replace(/'/g,"\\'")}')">${p} <span style="opacity:.5;font-size:10px">✎</span></span>`).join("")}
+          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px" onclick="openPlayerModal('${g.id}','B','${p.replace(/'/g,"\\'")}')">${p} <span style="opacity:.5">${icon('pencil',10)}</span></span>`).join("")}
         </div>
         <div style="display:flex;gap:6px"><input id="addB-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','B')">+</button></div>
       </div>
     </div>
-    <div class="lbl">Score <span class="tag">🔒 admin</span></div>
+    <div class="lbl">Score <span class="tag">${icon('lock',10)} admin</span></div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
       <input type="number" min="0" id="scoreA-${g.id}" value="${g.result?.scoreA??""}" placeholder="A" style="width:64px;text-align:center;font-size:20px;font-weight:700"/>
       <span style="color:var(--muted);font-size:18px">–</span>
       <input type="number" min="0" id="scoreB-${g.id}" value="${g.result?.scoreB??""}" placeholder="B" style="width:64px;text-align:center;font-size:20px;font-weight:700"/>
       <button class="btn btn-ghost btn-sm" onclick="saveScore('${g.id}')">Save</button>
     </div>
-    <div class="lbl">Goals & assists <span class="tag">🔒 admin</span></div>
+    <div class="lbl">Goals & assists <span class="tag">${icon('lock',10)} admin</span></div>
     <div style="margin-bottom:10px">${goalsHtml}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
       <select id="gPlayer-${g.id}" style="flex:2;font-size:13px;padding:7px"><option value="">Scorer…</option>${opts}</select>
@@ -1681,15 +1767,16 @@ async function fetchCsvText() {
 
 async function refreshCsvFromNetwork({silent}={}) {
   const btn=$("refreshCsv"); btn.disabled=true; btn.textContent="Fetching…";
+  const restore=()=>{ btn.innerHTML=`${icon('rotate')}Refresh data`; btn.disabled=false; };
   try {
     const text=await fetchCsvText();
     localStorage.setItem(LS_CSV,text); localStorage.setItem(LS_CSV+"_ts",String(Date.now()));
     updateDataStatus(); renderAvailability();
-    btn.textContent="✅ Done"; setTimeout(()=>{btn.textContent="🔄 Refresh data";btn.disabled=false;},1600);
+    btn.textContent="Done ✓"; setTimeout(restore,1600);
   } catch(e) {
-    btn.textContent="❌ Failed"; btn.disabled=false;
+    btn.textContent="Failed — retry?";
     if(!silent) console.warn(e);
-    setTimeout(()=>btn.textContent="🔄 Refresh data",2000);
+    setTimeout(restore,2000);
   }
 }
 
@@ -1718,7 +1805,7 @@ async function renderFixtures() {
   const card    = $('fixtures-card');
   const content = $('fixtures-content');
   card.style.display = '';
-  content.innerHTML  = `<div style="color:var(--muted);font-size:13px">Loading…</div>`;
+  content.innerHTML  = skelRows(3, 38);
 
   const results = await Promise.allSettled(
     FIXTURE_LEAGUES.map(lg =>
@@ -1736,7 +1823,7 @@ async function renderFixtures() {
   $('fixtures-live-dot').style.display = hasLive ? '' : 'none';
 
   if (!allEvents.length) {
-    content.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:2px 0">No fixtures on this date</div>`;
+    content.innerHTML = emptyState('tv', 'No fixtures on this date', 'Premier League & World Cup shown when scheduled');
     return;
   }
 
