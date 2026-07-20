@@ -13,42 +13,77 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  --bg: #0a0c0f;
-  --surface: #12151c;
-  --surface2: #1a1f2a;
-  --border: #222836;
-  --text: #e8ecf0;
-  --muted: #6b7585;
+  --bg: #06080c;
+  --surface: #0f131b;
+  --surface2: #161d29;
+  --surface3: #1e2736;
+  --border: #1f2736;
+  --border2: #2c3850;
+  --text: #eef2f8;
+  --muted: #7a86a0;
   --green: #22c55e;
+  --green2: #4ade80;
   --yellow: #f59e0b;
   --red: #ef4444;
+  --blue: #3b82f6;
+  --grad: linear-gradient(135deg, #22c55e, #10b981);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background:
+    radial-gradient(1100px 480px at 50% -8%, rgba(34,197,94,.075), transparent 62%),
+    radial-gradient(800px 400px at 100% 105%, rgba(59,130,246,.05), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--text); min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes rise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@keyframes sheetUp { from { transform:translateY(40px); opacity:.4; } to { transform:none; opacity:1; } }
 
 .app-header { padding: 18px 16px 8px; max-width: 640px; margin: 0 auto; }
 .app-header h1 { font-size: 19px; font-weight: 700; }
 .app-header p { font-size: 13px; color: var(--muted); margin-top: 2px; }
 
-.nav { display: flex; gap: 2px; background: var(--surface); padding: 4px; border-radius: 12px; margin: 0 16px 4px; max-width: 608px; margin-left: auto; margin-right: auto; }
-.nav button { flex: 1; padding: 8px 4px; border: none; border-radius: 9px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav button.active { background: var(--surface2); color: var(--text); }
+.nav {
+  display: flex; gap: 3px; padding: 4px; border-radius: 14px;
+  margin: 0 16px 6px; max-width: 608px; margin-left: auto; margin-right: auto;
+  position: sticky; top: 8px; z-index: 60;
+  background: rgba(15,19,27,.85);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 28px rgba(0,0,0,.4);
+}
+.nav button { flex: 1; padding: 9px 4px; border: none; border-radius: 10px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .18s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav button.active {
+  background: linear-gradient(135deg, rgba(34,197,94,.16), rgba(16,185,129,.08));
+  color: var(--green2);
+  box-shadow: inset 0 0 0 1px rgba(34,197,94,.3);
+}
 
 .tab { display: none; padding: 12px 16px 60px; max-width: 640px; margin: 0 auto; }
-.tab.active { display: block; }
+.tab.active { display: block; animation: rise .28s ease; }
 
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
-.lbl { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,0) 46%), var(--surface);
+  border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.22);
+}
+.lbl { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
 
-input, textarea, select { font: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; width: 100%; }
-input:focus, textarea:focus, select:focus { outline: none; border-color: var(--green); }
+input, textarea, select { font: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; width: 100%; transition: border-color .15s, box-shadow .15s; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,.14); }
 textarea { resize: vertical; min-height: 100px; font-family: ui-monospace, monospace; font-size: 13px; }
 
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: inherit; font-weight: 600; font-size: 14px; padding: 10px 16px; border-radius: 9px; border: none; cursor: pointer; transition: all .15s; white-space: nowrap; }
-.btn-primary { background: var(--green); color: #0a0c0f; }
-.btn-primary:hover { filter: brightness(1.08); }
-.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
-.btn-ghost:hover { border-color: #fff; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: inherit; font-weight: 700; font-size: 14px; padding: 10px 16px; border-radius: 11px; border: none; cursor: pointer; transition: all .16s; white-space: nowrap; }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--grad); color: #04120a; box-shadow: 0 4px 16px rgba(34,197,94,.28); }
+.btn-primary:hover { filter: brightness(1.09); box-shadow: 0 6px 20px rgba(34,197,94,.36); }
+.btn-ghost { background: rgba(255,255,255,.02); color: var(--text); border: 1px solid var(--border2); }
+.btn-ghost:hover { border-color: var(--muted); background: rgba(255,255,255,.05); }
 .btn-sm { font-size: 13px; padding: 7px 12px; }
 .btn-block { width: 100%; }
 .btn-danger { color: var(--red); border-color: var(--red); background: transparent; }
@@ -57,44 +92,51 @@ textarea { resize: vertical; min-height: 100px; font-family: ui-monospace, monos
 .row > * { flex: 1; }
 
 .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
-.badge-green { background: rgba(34,197,94,.12); color: var(--green); }
-.badge-yellow { background: rgba(245,158,11,.12); color: var(--yellow); }
-.badge-red { background: rgba(239,68,68,.12); color: var(--red); }
+.badge-green { background: rgba(34,197,94,.13); color: var(--green2); }
+.badge-yellow { background: rgba(245,158,11,.13); color: var(--yellow); }
+.badge-red { background: rgba(239,68,68,.13); color: var(--red); }
 .badge-muted { background: var(--surface2); color: var(--muted); }
 
-.weather-chip { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
+.weather-chip { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
 .weather-chip .icon { font-size: 22px; }
 
 .slot-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
 .slot-row:last-child { border-bottom: none; }
 .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.dot-green { background: var(--green); }
+.dot-green { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,.6); }
 .dot-red { background: var(--red); }
 .slot-time { font-weight: 500; min-width: 155px; }
 .slot-who { color: var(--muted); flex: 1; }
 
 .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-.team-card { background: var(--surface2); border-radius: 10px; padding: 12px; }
-.team-card h4 { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
+.team-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+.team-card h4 { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
 .team-card ol { padding-left: 18px; }
 .team-card li { padding: 3px 0; font-size: 14px; }
 
-.game-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+.game-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; transition: border-color .15s; }
+.game-card:hover { border-color: var(--border2); }
 .game-header { display: flex; align-items: center; gap: 10px; padding: 13px 14px; cursor: pointer; user-select: none; }
 .game-score { font-weight: 700; font-size: 16px; }
 .game-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .game-body { padding: 0 14px 14px; border-top: 1px solid var(--border); display: none; }
 .game-body.open { display: block; }
 
-.lb-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.lb-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .lb-row:last-child { border-bottom: none; }
-.lb-rank { font-size: 13px; color: var(--muted); width: 22px; text-align: right; }
-.lb-name { flex: 1; font-weight: 500; }
-.lb-val { font-size: 15px; font-weight: 700; color: var(--green); }
+.lb-rank { font-size: 13px; font-weight: 700; color: var(--muted); width: 22px; text-align: center; flex-shrink: 0; }
+.lb-ava { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.lb-name { flex: 1; font-weight: 600; cursor: pointer; transition: color .12s; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-name:hover, .lb-name:active { color: var(--green2); }
+.lb-val { font-size: 15px; font-weight: 700; color: var(--green2); }
 
-.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
-.modal { background: var(--surface); border-radius: 18px 18px 0 0; padding: 20px; width: 100%; max-width: 640px; max-height: 75vh; overflow-y: auto; }
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.78); z-index: 100; display: flex; align-items: flex-end; justify-content: center; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.modal { background: var(--surface); border: 1px solid var(--border); border-bottom: none; border-radius: 20px 20px 0 0; padding: 20px; width: 100%; max-width: 640px; max-height: 82vh; overflow-y: auto; animation: sheetUp .28s cubic-bezier(.2,.9,.3,1); }
 .modal pre { background: var(--surface2); border-radius: 10px; padding: 14px; font-size: 13px; white-space: pre-wrap; line-height: 1.6; margin: 12px 0; font-family: ui-monospace, monospace; }
+@media (min-width: 640px) {
+  .modal-bg { align-items: center; }
+  .modal { border-radius: 20px; border-bottom: 1px solid var(--border); }
+}
 
 .wa-svg { display: block; }
 .tag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--surface2); color: var(--muted); margin-left: 5px; vertical-align: middle; }
@@ -106,28 +148,55 @@ details[open] summary::before { content: "▼ "; }
 .flatpickr-calendar { background: var(--surface) !important; border-color: var(--border) !important; }
 .sortable-ghost { opacity: .35; }
 
-.field-chip { padding:7px 16px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; white-space:nowrap; }
-.field-chip.active { background:rgba(34,197,94,.12); color:var(--green); border-color:var(--green); }
+.field-chip { padding:7px 16px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.field-chip.active { background:rgba(34,197,94,.12); color:var(--green2); border-color:var(--green); }
 .field-chip:not(.active):hover { border-color: var(--text); color: var(--text); }
 
 .squad-row { display:flex; align-items:center; gap:6px; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
 .squad-row:last-child { border-bottom:none; }
-.squad-name { flex:1; min-width:0; font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pos-pill { padding:5px 10px; border-radius:14px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.5px; cursor:pointer; user-select:none; }
-.pos-pill.primary   { background:#22c55e; color:#fff; border-color:#22c55e; }
-.pos-pill.secondary { background:transparent; color:#22c55e; border-color:#22c55e; }
+.squad-name { flex:1; min-width:0; font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; transition:color .12s; }
+.squad-name:hover, .squad-name:active { color: var(--green2); }
+.pos-pill { padding:5px 10px; border-radius:14px; border:1px solid var(--border2); background:transparent; color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.5px; cursor:pointer; user-select:none; }
+.pos-pill.primary   { background:var(--grad); color:#fff; border-color:transparent; box-shadow:0 2px 8px rgba(34,197,94,.3); }
+.pos-pill.secondary { background:transparent; color:var(--green2); border-color:var(--green); }
 .pos-pill:active { transform:scale(.94); }
 
 .mo-pill { padding:5px 11px; border-radius:20px; border:1px solid var(--border); font-size:12px; cursor:pointer; transition:all .15s; background:transparent; color:var(--muted); }
-.mo-pill.active { background:var(--green); color:#0a0c0f; border-color:var(--green); font-weight:600; }
+.mo-pill.active { background:var(--green); color:#04120a; border-color:var(--green); font-weight:700; }
 .mo-pill.has-data:not(.active) { color:var(--text); }
 .mo-pill.disabled { opacity:.3; cursor:default; }
+
+/* Balance meter */
+.balance-wrap { margin-top: 12px; padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; }
+.balance-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+.balance-top strong { font-size: 18px; }
+.balance-bar { height: 8px; border-radius: 6px; background: var(--surface); overflow: hidden; }
+.balance-fill { height: 100%; border-radius: 6px; transition: width .5s cubic-bezier(.2,.8,.3,1); }
+
+/* Player profile sheet */
+.profile-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.profile-ava { width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.4); box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+.profile-name { font-size: 20px; font-weight: 800; line-height: 1.2; }
+.profile-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.stat-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.stat-tile { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 6px; text-align: center; }
+.stat-tile b { display: block; font-size: 17px; color: var(--green2); }
+.stat-tile span { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+.form-chip { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px; font-size: 12px; font-weight: 800; margin-right: 4px; }
+.form-W { background: rgba(34,197,94,.18); color: var(--green2); }
+.form-D { background: rgba(245,158,11,.16); color: var(--yellow); }
+.form-L { background: rgba(239,68,68,.15); color: var(--red); }
+.h2h-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.h2h-row:last-child { border-bottom: none; }
+.h2h-name { flex: 1; font-weight: 600; cursor: pointer; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h2h-name:hover { color: var(--green2); }
+.h2h-val { color: var(--muted); font-size: 12px; white-space: nowrap; }
 
 /* Mobile responsiveness */
 @media (max-width: 520px) {
   .game-teams-row { flex-direction: column !important; }
   .badge { font-size: 13px; padding: 5px 10px; }
-  .badge-edit, .badge-remove { padding: 4px 7px !important; font-size: 12px !important; }
+  .stat-tiles { grid-template-columns: repeat(4, 1fr); }
 }
 </style>
 </head>
@@ -348,6 +417,16 @@ details[open] summary::before { content: "▼ "; }
       <button class="btn btn-ghost" style="color:var(--red)" onclick="removePlayerFromModal()">Remove</button>
       <button class="btn btn-ghost" onclick="closePlayerModal()">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- PLAYER PROFILE SHEET -->
+<div id="profileModal" class="modal-bg" style="display:none" onclick="if(event.target===this)closeProfile()">
+  <div class="modal">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:-6px">
+      <button onclick="closeProfile()" style="background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1; padding:2px 6px">×</button>
+    </div>
+    <div id="profileContent"></div>
   </div>
 </div>
 
@@ -719,7 +798,8 @@ function renderSquad() {
       return `<button class="pos-pill ${cls}" onclick="togglePosition('${k}','${pos}')">${label}</button>`;
     };
     return `<div class="squad-row">
-      <div class="squad-name">${disp}</div>
+      <div class="lb-ava" style="${avaStyle(disp)};width:26px;height:26px;font-size:10px">${initials(disp)}</div>
+      <div class="squad-name" onclick="openProfile('${encodeURIComponent(disp)}')">${disp}</div>
       ${pill('DEF')}${pill('MID')}${pill('STR')}
     </div>`;
   }).join('');
@@ -743,6 +823,146 @@ function posLabel(name) {
   if (rec.secondary) return `${short(rec.secondary)}²`;
   return '';
 }
+
+// ── AVATARS ──────────────────────────────────────────────────
+// Deterministic gradient per player (hash of normalized name → hue)
+function avaHue(name) {
+  const k = nk(name);
+  let h = 0; for (const c of k) h = (c.charCodeAt(0) + ((h << 5) - h)) | 0;
+  return ((h % 360) + 360) % 360;
+}
+function avaStyle(name) {
+  const h = avaHue(name);
+  return `background:linear-gradient(135deg,hsl(${h},58%,46%),hsl(${(h+45)%360},60%,34%))`;
+}
+function initials(name) {
+  const parts = (name||'').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return (parts.length >= 2 ? parts[0][0] + parts[1][0] : parts[0].slice(0,2)).toUpperCase();
+}
+
+// ── BALANCE METER ────────────────────────────────────────────
+function teamTotals(list) {
+  const t = { STR:0, MID:0, DEF:0 };
+  for (const n of list) { const s = positionScore(n); t.STR+=s.STR; t.MID+=s.MID; t.DEF+=s.DEF; }
+  return t;
+}
+function computeBalance(teams) {
+  const tA = teamTotals(teams.teamA), tB = teamTotals(teams.teamB);
+  const imb = Math.abs(tA.STR-tB.STR) + Math.abs(tA.MID-tB.MID) + Math.abs(tA.DEF-tB.DEF);
+  const tot = tA.STR+tA.MID+tA.DEF+tB.STR+tB.MID+tB.DEF;
+  const all = [...teams.teamA, ...teams.teamB];
+  const labeled = all.filter(n => posLabel(n)).length;
+  const score = tot ? Math.max(0, Math.round(100 - (imb / tot) * 100)) : null;
+  return { score, tA, tB, labeled, total: all.length };
+}
+function balanceVerdict(score) {
+  if (score === null) return { label: 'No position data', emoji: '🎲' };
+  if (score >= 85) return { label: 'Excellent balance', emoji: '✅' };
+  if (score >= 65) return { label: 'Good balance', emoji: '👍' };
+  if (score >= 45) return { label: 'A bit uneven', emoji: '⚠️' };
+  return { label: 'Lopsided — re-roll?', emoji: '🚨' };
+}
+
+// ── PLAYER PROFILE ───────────────────────────────────────────
+function computeProfile(key) {
+  const played = (gamesCache||[]).filter(g => g.result).sort((a,b) => a.date.localeCompare(b.date));
+  const p = { gp:0, wins:0, draws:0, losses:0, goals:0, assists:0, ogs:0, form:[], mates:{}, opps:{}, names:{} };
+  const reg = (k, raw) => { if (k && !p.names[k]) p.names[k] = (raw||'').trim(); };
+
+  for (const g of played) {
+    const teamA = [...new Set((g.teamA||[]).map(x => { const k=nk(x); reg(k,x); return k; }).filter(Boolean))];
+    const teamB = [...new Set((g.teamB||[]).map(x => { const k=nk(x); reg(k,x); return k; }).filter(Boolean))];
+    const onA = teamA.includes(key), onB = teamB.includes(key);
+    if (!onA && !onB) continue;
+    const my = onA ? 'A' : 'B';
+    const myMates = onA ? teamA : teamB, myOpps = onA ? teamB : teamA;
+
+    const evA = (g.result.goals||[]).filter(ev=>ev.team==="A").length;
+    const evB = (g.result.goals||[]).filter(ev=>ev.team==="B").length;
+    const sA  = g.result.scoreA ?? (evA||evB ? evA : 0);
+    const sB  = g.result.scoreB ?? (evA||evB ? evB : 0);
+    const outcome = sA>sB?"A":sB>sA?"B":"draw";
+    const res = outcome === 'draw' ? 'D' : outcome === my ? 'W' : 'L';
+
+    p.gp++;
+    if (res==='W') p.wins++; else if (res==='D') p.draws++; else p.losses++;
+    p.form.push({ res, date: g.date, score: `${sA}–${sB}` });
+
+    for (const m of myMates) { if (m===key) continue;
+      const r = p.mates[m] || (p.mates[m]={gp:0,w:0,d:0,l:0});
+      r.gp++; if (res==='W') r.w++; else if (res==='D') r.d++; else r.l++;
+    }
+    for (const o of myOpps) {
+      const r = p.opps[o] || (p.opps[o]={gp:0,w:0,d:0,l:0});
+      r.gp++; if (res==='W') r.w++; else if (res==='D') r.d++; else r.l++;
+    }
+    for (const ev of (g.result.goals||[])) {
+      if (nk(ev.player) === key) { if (ev.og) p.ogs++; else p.goals++; }
+      if (ev.assist && nk(ev.assist) === key) p.assists++;
+    }
+  }
+  return p;
+}
+
+function openProfile(encName) {
+  const display = decodeURIComponent(encName);
+  const key = nk(display);
+  if (!key) return;
+  const p = computeProfile(key);
+  const rec = positions[key] || {};
+  const posBits = [];
+  const posName = x => x==='STR'?'⚡ Striker':x==='MID'?'⚙️ Midfield':'🥅 Defense';
+  if (rec.primary) posBits.push(`${posName(rec.primary)}`);
+  if (rec.secondary) posBits.push(`${posName(rec.secondary)} (2nd)`);
+
+  const winPct = p.gp ? Math.round(p.wins / p.gp * 100) : 0;
+  const pts = p.wins*3 + p.draws;
+  const last5 = p.form.slice(-5);
+  const formHtml = last5.length
+    ? last5.map(f=>`<span class="form-chip form-${f.res}" title="${f.date} (${f.score})">${f.res}</span>`).join('')
+    : `<span style="color:var(--muted);font-size:13px">No games yet</span>`;
+
+  const h2h = (obj, kind) => Object.entries(obj)
+    .sort((a,b) => b[1].gp - a[1].gp).slice(0, 6)
+    .map(([k, r]) => {
+      const nm = p.names[k] || k;
+      const pct = Math.round(r.w / r.gp * 100);
+      return `<div class="h2h-row">
+        <div class="lb-ava" style="${avaStyle(nm)};width:26px;height:26px;font-size:10px">${initials(nm)}</div>
+        <div class="h2h-name" onclick="openProfile('${encodeURIComponent(nm)}')">${nm}</div>
+        <div class="h2h-val">${r.gp} gms · ${r.w}W ${r.d}D ${r.l}L · ${pct}% ${kind==='with'?'together':'vs them'}</div>
+      </div>`;
+    }).join('') || `<p style="color:var(--muted);font-size:13px;padding:4px 0">Not enough games.</p>`;
+
+  $('profileContent').innerHTML = `
+    <div class="profile-head">
+      <div class="profile-ava" style="${avaStyle(display)}">${initials(display)}</div>
+      <div style="min-width:0">
+        <div class="profile-name">${display}</div>
+        <div class="profile-sub">${posBits.length ? posBits.join(' · ') : 'No position set — add it in the Squad tab'}</div>
+      </div>
+    </div>
+    <div class="stat-tiles">
+      <div class="stat-tile"><b>${p.gp}</b><span>Games</span></div>
+      <div class="stat-tile"><b>${pts}</b><span>Points</span></div>
+      <div class="stat-tile"><b>${winPct}%</b><span>Win rate</span></div>
+      <div class="stat-tile"><b>${p.wins}-${p.draws}-${p.losses}</b><span>W-D-L</span></div>
+      <div class="stat-tile"><b>${p.goals}</b><span>Goals</span></div>
+      <div class="stat-tile"><b>${p.assists}</b><span>Assists</span></div>
+      <div class="stat-tile"><b>${p.goals + p.assists}</b><span>G+A</span></div>
+      <div class="stat-tile"><b>${p.gp ? ((p.goals+p.assists)/p.gp).toFixed(1) : '0.0'}</b><span>G+A / gm</span></div>
+    </div>
+    ${p.ogs ? `<div style="font-size:12px;color:var(--muted);margin:-6px 0 12px">🫣 ${p.ogs} own goal${p.ogs>1?'s':''} — it happens to the best of us</div>` : ''}
+    <div class="lbl">Form — last ${last5.length || 5} games</div>
+    <div style="margin-bottom:16px">${formHtml}</div>
+    <div class="lbl">🤝 Best chemistry — played together</div>
+    <div style="margin-bottom:16px">${h2h(p.mates, 'with')}</div>
+    <div class="lbl">⚔️ Rivals — played against</div>
+    <div>${h2h(p.opps, 'against')}</div>`;
+  $('profileModal').style.display = 'flex';
+}
+function closeProfile() { $('profileModal').style.display = 'none'; }
 
 let lastShuffleReasons = [];   // [{name, team, reason}] from the most recent randomize
 
@@ -864,8 +1084,23 @@ function shuffle(arr) {
 function showCurrentTeams() {
   if (!currentTeams) return;
   const tag = n => { const l = posLabel(n); return l ? ` <span style="font-size:10px;color:var(--muted);font-weight:600">${l}</span>` : ''; };
-  const t = currentTeams.totals;
-  const balanceLine = t ? `<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Position weight — A: 🥅${t.A.DEF} ⚙️${t.A.MID} ⚡${t.A.STR} · B: 🥅${t.B.DEF} ⚙️${t.B.MID} ⚡${t.B.STR}</div>` : '';
+  const bal = computeBalance(currentTeams);
+  const v = balanceVerdict(bal.score);
+  const pct = bal.score ?? 0;
+  const hue = Math.round(pct * 1.2); // 0 = red, 120 = green
+  const balanceLine = `
+    <div class="balance-wrap">
+      <div class="balance-top">
+        <span>⚖️</span>
+        <strong style="color:hsl(${hue},70%,55%)">${bal.score === null ? '—' : bal.score + '%'}</strong>
+        <span style="color:var(--muted)">${v.label} ${v.emoji}</span>
+      </div>
+      <div class="balance-bar"><div class="balance-fill" style="width:${pct}%;background:linear-gradient(90deg,hsl(${Math.max(0,hue-25)},70%,45%),hsl(${hue},70%,50%))"></div></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px">
+        A: 🥅${bal.tA.DEF} ⚙️${bal.tA.MID} ⚡${bal.tA.STR} &nbsp;·&nbsp; B: 🥅${bal.tB.DEF} ⚙️${bal.tB.MID} ⚡${bal.tB.STR}
+        &nbsp;·&nbsp; ${bal.labeled}/${bal.total} players have positions
+      </div>
+    </div>`;
   const reasonsHtml = lastShuffleReasons.length ? `
     <details style="margin-top:10px">
       <summary style="font-size:12px;color:var(--muted);cursor:pointer">🧠 Why these teams?</summary>
@@ -899,6 +1134,8 @@ function buildTeamsText() {
   currentTeams.teamA.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
   lines.push("",`Team B (${currentTeams.teamB.length}):`);
   currentTeams.teamB.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
+  const bal = computeBalance(currentTeams);
+  if (bal.score !== null) lines.push("", `⚖️ Balance: ${bal.score}% — ${balanceVerdict(bal.score).label}`);
   lines.push("", appUrl('teams'));
   return lines.join("\n");
 }
@@ -1156,7 +1393,11 @@ function renderStats() {
   $("statGames").textContent = played.length;
   $("statGoals").textContent = played.reduce((s,g)=>(g.result?.goals?.length||0)+s, 0);
 
-  const lbRow=([name,s],i,key)=>`<div class="lb-row"><div class="lb-rank">${i+1}</div><div class="lb-name">${name}</div><div class="lb-val">${s[key]}</div></div>`;
+  const rankBadge=i=> i===0?`<div class="lb-rank" style="color:#fbbf24">1</div>`
+                    : i===1?`<div class="lb-rank" style="color:#cbd5e1">2</div>`
+                    : i===2?`<div class="lb-rank" style="color:#e08a3c">3</div>`
+                    : `<div class="lb-rank">${i+1}</div>`;
+  const lbRow=([name,s],i,key)=>`<div class="lb-row">${rankBadge(i)}<div class="lb-ava" style="${avaStyle(name)}">${initials(name)}</div><div class="lb-name" onclick="openProfile('${encodeURIComponent(name)}')">${name}</div><div class="lb-val">${s[key]}</div></div>`;
   $("lbGoals").innerHTML=[...entries].filter(([,s])=>s.goals>0).sort((a,b)=>b[1].goals-a[1].goals).map((e,i)=>lbRow(e,i,"goals")).join("")||`<p style="color:var(--muted);font-size:13px">No goals yet.</p>`;
   $("lbAssists").innerHTML=[...entries].filter(([,s])=>s.assists>0).sort((a,b)=>b[1].assists-a[1].assists).map((e,i)=>lbRow(e,i,"assists")).join("")||`<p style="color:var(--muted);font-size:13px">No assists yet.</p>`;
   $("lbWins").innerHTML=[...entries]
@@ -1169,10 +1410,11 @@ function renderStats() {
     .map(([name,s],i)=>{
       const gp=s.wins+s.draws+s.losses, pts=s.wins*3+s.draws, ga=s.goals+s.assists;
       return `<div class="lb-row" style="flex-wrap:wrap;row-gap:2px">
-        <div class="lb-rank">${i+1}</div>
-        <div class="lb-name">${name}</div>
+        ${rankBadge(i)}
+        <div class="lb-ava" style="${avaStyle(name)}">${initials(name)}</div>
+        <div class="lb-name" onclick="openProfile('${encodeURIComponent(name)}')">${name}</div>
         <div class="lb-val" style="white-space:nowrap">${pts}<span style="font-size:11px;font-weight:500;color:var(--muted);margin-left:2px">pts</span></div>
-        <div style="width:100%;padding-left:32px;font-size:11px;color:var(--muted)">${gp}GP · ${s.wins}W · ${s.draws}D · ${s.losses}L · <span style="color:var(--text);font-weight:600">${ga}</span> G+A</div>
+        <div style="width:100%;padding-left:72px;font-size:11px;color:var(--muted)">${gp}GP · ${s.wins}W · ${s.draws}D · ${s.losses}L · <span style="color:var(--text);font-weight:600">${ga}</span> G+A</div>
       </div>`;
     }).join("")||`<p style="color:var(--muted);font-size:13px">No results yet.</p>`;
   openIds.forEach(id=>{ const el=$('gb-'+id); if(el) el.classList.add('open'); });
