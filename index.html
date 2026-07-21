@@ -1003,8 +1003,13 @@ function openProfile(encName) {
     ? last5.map(f=>`<span class="form-chip form-${f.res}" title="${f.date} (${f.score})">${f.res}</span>`).join('')
     : `<span style="color:var(--muted);font-size:13px">No games yet</span>`;
 
+  // Chemistry ranks by win% together (min 2 games, so one lucky game can't top the list),
+  // then by games played. Rivals rank by most games against.
   const h2h = (obj, kind) => Object.entries(obj)
-    .sort((a,b) => b[1].gp - a[1].gp).slice(0, 6)
+    .sort((a,b) => kind === 'with'
+      ? (b[1].gp >= 2) - (a[1].gp >= 2) || b[1].w/b[1].gp - a[1].w/a[1].gp || b[1].gp - a[1].gp
+      : b[1].gp - a[1].gp)
+    .slice(0, 6)
     .map(([k, r]) => {
       const nm = p.names[k] || k;
       const pct = Math.round(r.w / r.gp * 100);
