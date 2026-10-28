@@ -212,6 +212,17 @@ details[open] summary::before { content: "▼ "; }
 .empty-t { font-weight: 700; font-size: 14px; }
 .empty-s { font-size: 12px; color: var(--muted); margin-top: 3px; }
 
+/* Team C badge + 3-team grid + RR standings */
+.badge-blue { background: rgba(59,130,246,.15); color: #60a5fa; }
+@media (max-width: 520px) { .teams-grid.three { grid-template-columns: 1fr; } }
+.rr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.rr-table th { color: var(--muted); font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; padding: 4px 6px; text-align: center; }
+.rr-table td { padding: 6px; text-align: center; border-top: 1px solid var(--border); }
+
+/* Photo timeline */
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.photo-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; cursor: zoom-in; border: 1px solid var(--border); background: var(--surface2); }
+
 /* Balance meter */
 .balance-wrap { margin-top: 12px; padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; }
 .balance-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; font-size: 13px; }
@@ -274,6 +285,7 @@ details[open] summary::before { content: "▼ "; }
   <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></symbol>
   <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></symbol>
 </svg>
 
 <header class="topbar">
@@ -286,6 +298,7 @@ details[open] summary::before { content: "▼ "; }
   <button onclick="switchTab('teams')"><svg class="icon"><use href="#i-shuffle"/></svg><span>Teams</span></button>
   <button onclick="switchTab('squad')"><svg class="icon"><use href="#i-users"/></svg><span>Squad</span></button>
   <button onclick="switchTab('stats')"><svg class="icon"><use href="#i-chart"/></svg><span>Stats</span></button>
+  <button onclick="switchTab('photos')"><svg class="icon"><use href="#i-camera"/></svg><span>Photos</span></button>
 </nav>
 
 <!-- AVAILABILITY -->
@@ -363,6 +376,10 @@ details[open] summary::before { content: "▼ "; }
       <button class="btn btn-ghost btn-sm" id="unlockListBtn"><svg class="icon"><use href="#i-pencil"/></svg>Edit</button>
     </div>
     <div id="lockedNamesList" style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:12px"></div>
+    <div style="display:flex;gap:1px;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:10px">
+      <button id="tm-2" onclick="setTeamMode(2)" style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:var(--surface3);color:var(--text)">2 teams</button>
+      <button id="tm-3" onclick="setTeamMode(3)" style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--muted)">3 teams · round robin</button>
+    </div>
     <div class="row">
       <button class="btn btn-primary" id="shuffle">Randomize</button>
       <button class="btn btn-ghost" id="reroll" hidden>Re-roll</button>
@@ -467,6 +484,25 @@ details[open] summary::before { content: "▼ "; }
 
 </div>
 
+<!-- PHOTOS -->
+<div id="tab-photos" class="tab">
+  <div class="card">
+    <div class="lbl"><svg class="icon"><use href="#i-camera"/></svg>Add photos</div>
+    <div class="row">
+      <input type="date" id="photoDate" />
+      <button class="btn btn-primary" onclick="$('photoFile').click()"><svg class="icon"><use href="#i-plus"/></svg>Upload</button>
+    </div>
+    <input type="file" id="photoFile" accept="image/*" multiple style="display:none" onchange="uploadPhotos(this.files)" />
+    <div id="photoStatus" style="font-size:12px;color:var(--muted);margin-top:8px;display:none"></div>
+  </div>
+  <div id="photoTimeline"></div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:300;align-items:center;justify-content:center;cursor:zoom-out" onclick="this.style.display='none'">
+  <img id="lightboxImg" style="max-width:96vw;max-height:92vh;border-radius:12px" />
+</div>
+
 <!-- PASSWORD MODAL -->
 <div id="pwModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:200; align-items:center; justify-content:center">
   <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px; width:300px; max-width:88vw">
@@ -552,14 +588,15 @@ let currentTeams = null;
 let weatherCache = null;
 
 // ── NAV ──────────────────────────────────────────────────────
-const TAB_HASHES = { avail:'field', teams:'teams', squad:'squad', stats:'stats' };
-const HASH_TABS  = { field:'avail', teams:'teams', squad:'squad', stats:'stats' };
+const TAB_HASHES = { avail:'field', teams:'teams', squad:'squad', stats:'stats', photos:'photos' };
+const HASH_TABS  = { field:'avail', teams:'teams', squad:'squad', stats:'stats', photos:'photos' };
 function switchTab(name, opts) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   $(`tab-${name}`).classList.add('active');
-  document.querySelectorAll('.nav button')[{avail:0,teams:1,squad:2,stats:3}[name]].classList.add('active');
+  document.querySelectorAll('.nav button')[{avail:0,teams:1,squad:2,stats:3,photos:4}[name]].classList.add('active');
   if (name === 'stats') renderStats();
+  if (name === 'photos') renderPhotos();
   if (name === 'squad') renderSquad();
   if (!opts?.fromHash) {
     const hash = '#' + TAB_HASHES[name];
@@ -928,13 +965,18 @@ function teamTotals(list) {
   return t;
 }
 function computeBalance(teams) {
-  const tA = teamTotals(teams.teamA), tB = teamTotals(teams.teamB);
-  const imb = Math.abs(tA.STR-tB.STR) + Math.abs(tA.MID-tB.MID) + Math.abs(tA.DEF-tB.DEF);
-  const tot = tA.STR+tA.MID+tA.DEF+tB.STR+tB.MID+tB.DEF;
-  const all = [...teams.teamA, ...teams.teamB];
+  const letters = ['A','B','C'].filter(t => Array.isArray(teams['team'+t]));
+  const tots = {}; letters.forEach(t => tots[t] = teamTotals(teams['team'+t]));
+  let imb = 0, tot = 0;
+  for (const pos of ['STR','MID','DEF']) {
+    const vals = letters.map(t => tots[t][pos]);
+    imb += Math.max(...vals) - Math.min(...vals);
+    tot += vals.reduce((a,b)=>a+b, 0);
+  }
+  const all = letters.flatMap(t => teams['team'+t]);
   const labeled = all.filter(n => posLabel(n)).length;
   const score = tot ? Math.max(0, Math.round(100 - (imb / tot) * 100)) : null;
-  return { score, tA, tB, labeled, total: all.length };
+  return { score, tots, letters, labeled, total: all.length };
 }
 function balanceVerdict(score) {
   if (score === null) return { label: 'No position data', emoji: '🎲' };
@@ -951,23 +993,22 @@ function computeProfile(key) {
   const reg = (k, raw) => { if (k && !p.names[k]) p.names[k] = (raw||'').trim(); };
 
   for (const g of played) {
-    const teamA = [...new Set((g.teamA||[]).map(x => { const k=nk(x); reg(k,x); return k; }).filter(Boolean))];
-    const teamB = [...new Set((g.teamB||[]).map(x => { const k=nk(x); reg(k,x); return k; }).filter(Boolean))];
-    const onA = teamA.includes(key), onB = teamB.includes(key);
-    if (!onA && !onB) continue;
-    const my = onA ? 'A' : 'B';
-    const myMates = onA ? teamA : teamB, myOpps = onA ? teamB : teamA;
+    const so = sessionOutcomes(g);
+    if (!so) continue;
 
-    const evA = (g.result.goals||[]).filter(ev=>ev.team==="A").length;
-    const evB = (g.result.goals||[]).filter(ev=>ev.team==="B").length;
-    const sA  = g.result.scoreA ?? (evA||evB ? evA : 0);
-    const sB  = g.result.scoreB ?? (evA||evB ? evB : 0);
-    const outcome = sA>sB?"A":sB>sA?"B":"draw";
-    const res = outcome === 'draw' ? 'D' : outcome === my ? 'W' : 'L';
+    const rosters = {};
+    for (const t of gameTeamLetters(g)) {
+      rosters[t] = [...new Set((g['team'+t]||[]).map(x => { const k=nk(x); reg(k,x); return k; }).filter(Boolean))];
+    }
+    const my = Object.keys(rosters).find(t => rosters[t].includes(key));
+    if (!my) continue;
+    const res = so.outcomes[my] || 'D';
+    const myMates = rosters[my];
+    const myOpps  = Object.keys(rosters).filter(t => t !== my).flatMap(t => rosters[t]);
 
     p.gp++;
     if (res==='W') p.wins++; else if (res==='D') p.draws++; else p.losses++;
-    p.form.push({ res, date: g.date, score: `${sA}–${sB}` });
+    p.form.push({ res, date: g.date, score: g.mode==='rr' ? `RR ${so.label}` : so.label });
 
     for (const m of myMates) { if (m===key) continue;
       const r = p.mates[m] || (p.mates[m]={gp:0,w:0,d:0,l:0});
@@ -978,8 +1019,8 @@ function computeProfile(key) {
       r.gp++; if (res==='W') r.w++; else if (res==='D') r.d++; else r.l++;
     }
     for (const ev of (g.result.goals||[])) {
-      if (nk(ev.player) === key) { if (ev.og) p.ogs++; else p.goals++; }
-      if (ev.assist && nk(ev.assist) === key) p.assists++;
+      if (nk(ev.player) === key) { if (ev.og) p.ogs++; else p.goals += so.weight; }
+      if (ev.assist && nk(ev.assist) === key) p.assists += so.weight;
     }
   }
   return p;
@@ -1033,9 +1074,9 @@ function openProfile(encName) {
       <div class="stat-tile"><b>${pts}</b><span>Points</span></div>
       <div class="stat-tile"><b>${winPct}%</b><span>Win rate</span></div>
       <div class="stat-tile"><b>${p.wins}-${p.draws}-${p.losses}</b><span>W-D-L</span></div>
-      <div class="stat-tile"><b>${p.goals}</b><span>Goals</span></div>
-      <div class="stat-tile"><b>${p.assists}</b><span>Assists</span></div>
-      <div class="stat-tile"><b>${p.goals + p.assists}</b><span>G+A</span></div>
+      <div class="stat-tile"><b>${fmtNum(p.goals)}</b><span>Goals</span></div>
+      <div class="stat-tile"><b>${fmtNum(p.assists)}</b><span>Assists</span></div>
+      <div class="stat-tile"><b>${fmtNum(p.goals + p.assists)}</b><span>G+A</span></div>
       <div class="stat-tile"><b>${p.gp ? ((p.goals+p.assists)/p.gp).toFixed(1) : '0.0'}</b><span>G+A / gm</span></div>
     </div>
     ${p.ogs ? `<div style="font-size:12px;color:var(--muted);margin:-6px 0 12px">${p.ogs} own goal${p.ogs>1?'s':''} — it happens to the best of us</div>` : ''}
@@ -1051,64 +1092,62 @@ function closeProfile() { $('profileModal').style.display = 'none'; }
 
 let lastShuffleReasons = [];   // [{name, team, reason}] from the most recent randomize
 
-function balancedShuffle(players) {
-  // Deterministic shuffle
+function balancedShuffle(players, k = 2) {
+  const letters = ['A','B','C'].slice(0, k);
+  // Deterministic shuffle, then deal position-known players FIRST so unknowns fill the tail
   const shuffled = players.slice().sort(() => Math.random() - 0.5);
-  // Deal position-known players FIRST so unknowns fill the tail (better balance)
   const strength = n => { const s = positionScore(n); return s.STR + s.MID + s.DEF; };
   shuffled.sort((a,b) => strength(b) - strength(a));
 
-  const teamA = [], teamB = [];
-  const totA = { STR:0, MID:0, DEF:0 }, totB = { STR:0, MID:0, DEF:0 };
-  const imbalance = (a,b) => Math.abs(a.STR-b.STR) + Math.abs(a.MID-b.MID) + Math.abs(a.DEF-b.DEF);
+  const teams = letters.map(() => []);
+  const tots  = letters.map(() => ({ STR:0, MID:0, DEF:0 }));
   const reasons = [];
+  const add = (i, name, s, reason) => {
+    teams[i].push(name);
+    tots[i].STR += s.STR; tots[i].MID += s.MID; tots[i].DEF += s.DEF;
+    reasons.push({ name, team: letters[i], reason });
+  };
+  // Total position spread across all teams if team i got score s added
+  const spreadAfter = (i, s) => {
+    let total = 0;
+    for (const pos of ['STR','MID','DEF']) {
+      const vals = tots.map((t, j) => t[pos] + (j === i ? s[pos] : 0));
+      total += Math.max(...vals) - Math.min(...vals);
+    }
+    return total;
+  };
 
   for (const name of shuffled) {
     const s = positionScore(name);
     const lbl = posLabel(name);
-    // Hard rule: keep team sizes within 1
-    if (teamA.length - teamB.length >= 1) {
-      teamB.push(name); totB.STR+=s.STR; totB.MID+=s.MID; totB.DEF+=s.DEF;
-      reasons.push({ name, team:'B', reason:`→ B to even out team sizes${lbl?` (${lbl})`:''}` });
-      continue;
-    }
-    if (teamB.length - teamA.length >= 1) {
-      teamA.push(name); totA.STR+=s.STR; totA.MID+=s.MID; totA.DEF+=s.DEF;
-      reasons.push({ name, team:'A', reason:`→ A to even out team sizes${lbl?` (${lbl})`:''}` });
+    // Hard rule: only the smallest team(s) are eligible, keeping sizes within 1
+    const minLen = Math.min(...teams.map(t => t.length));
+    const elig = letters.map((_, i) => i).filter(i => teams[i].length === minLen);
+
+    if (elig.length === 1) {
+      add(elig[0], name, s, `→ ${letters[elig[0]]} to even out team sizes${lbl?` (${lbl})`:''}`);
       continue;
     }
     if (!lbl) {
-      // No position data — pure random placement
-      if (Math.random() < 0.5) {
-        teamA.push(name);
-        reasons.push({ name, team:'A', reason:'→ A by random pick (no position set)' });
-      } else {
-        teamB.push(name);
-        reasons.push({ name, team:'B', reason:'→ B by random pick (no position set)' });
-      }
+      const i = elig[Math.floor(Math.random() * elig.length)];
+      add(i, name, s, `→ ${letters[i]} by random pick (no position set)`);
       continue;
     }
-    // Equal sizes — choose the team that improves position balance
-    const afterA = { STR: totA.STR+s.STR, MID: totA.MID+s.MID, DEF: totA.DEF+s.DEF };
-    const afterB = { STR: totB.STR+s.STR, MID: totB.MID+s.MID, DEF: totB.DEF+s.DEF };
-    const costA = imbalance(afterA, totB);
-    const costB = imbalance(totA, afterB);
-    if (costA < costB) {
-      teamA.push(name); totA.STR+=s.STR; totA.MID+=s.MID; totA.DEF+=s.DEF;
-      reasons.push({ name, team:'A', reason:`→ A: ${lbl} needed there for balance` });
-    } else if (costB < costA) {
-      teamB.push(name); totB.STR+=s.STR; totB.MID+=s.MID; totB.DEF+=s.DEF;
-      reasons.push({ name, team:'B', reason:`→ B: ${lbl} needed there for balance` });
-    } else if (Math.random() < 0.5) {
-      teamA.push(name); totA.STR+=s.STR; totA.MID+=s.MID; totA.DEF+=s.DEF;
-      reasons.push({ name, team:'A', reason:`→ A by coin flip (${lbl} balanced either way)` });
+    // Choose the eligible team that keeps position spread smallest
+    const costs = elig.map(i => ({ i, c: spreadAfter(i, s) }));
+    const best = Math.min(...costs.map(x => x.c));
+    const bestIs = costs.filter(x => x.c === best).map(x => x.i);
+    if (bestIs.length === 1) {
+      add(bestIs[0], name, s, `→ ${letters[bestIs[0]]}: ${lbl} needed there for balance`);
     } else {
-      teamB.push(name); totB.STR+=s.STR; totB.MID+=s.MID; totB.DEF+=s.DEF;
-      reasons.push({ name, team:'B', reason:`→ B by coin flip (${lbl} balanced either way)` });
+      const i = bestIs[Math.floor(Math.random() * bestIs.length)];
+      add(i, name, s, `→ ${letters[i]} by coin flip (${lbl} balanced either way)`);
     }
   }
   lastShuffleReasons = reasons;
-  return { teamA, teamB, totals: { A: totA, B: totB } };
+  const out = { teamA: teams[0], teamB: teams[1] };
+  if (k >= 3) out.teamC = teams[2];
+  return out;
 }
 
 // ── TEAMS ─────────────────────────────────────────────────────
@@ -1170,7 +1209,7 @@ let _lastDraftJson = null;
 
 function saveDraft() {
   const val = (listLocked || currentTeams)
-    ? JSON.stringify({ locked: listLocked, teams: currentTeams, reasons: lastShuffleReasons, rerolls: rerollCount })
+    ? JSON.stringify({ locked: listLocked, teams: currentTeams, reasons: lastShuffleReasons, rerolls: rerollCount, tm: teamMode })
     : '';
   if (val === _lastDraftJson) return;
   _lastDraftJson = val;
@@ -1195,6 +1234,7 @@ function applyDraft(val) {
     rerollCount = d.rerolls || 0;
     lastShuffleReasons = d.reasons || [];
     currentTeams = d.teams || null;
+    if (d.tm) setTeamMode(d.tm);
     if (listLocked) localStorage.setItem("dewitt_listLocked","1"); else localStorage.removeItem("dewitt_listLocked");
     if (currentTeams) localStorage.setItem(LS_TEAMS, JSON.stringify(currentTeams)); else localStorage.removeItem(LS_TEAMS);
     updateListUI();
@@ -1224,8 +1264,7 @@ function showCurrentTeams() {
       </div>
       <div class="balance-bar"><div class="balance-fill" style="width:${pct}%;background:linear-gradient(90deg,hsl(${Math.max(0,hue-25)},70%,45%),hsl(${hue},70%,50%))"></div></div>
       <div style="font-size:11px;color:var(--muted);margin-top:8px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center">
-        <span>A · ${icon('shield',11)}${bal.tA.DEF} ${icon('gear',11)}${bal.tA.MID} ${icon('zap',11)}${bal.tA.STR}</span>
-        <span>B · ${icon('shield',11)}${bal.tB.DEF} ${icon('gear',11)}${bal.tB.MID} ${icon('zap',11)}${bal.tB.STR}</span>
+        ${bal.letters.map(t=>`<span>${t} · ${icon('shield',11)}${bal.tots[t].DEF} ${icon('gear',11)}${bal.tots[t].MID} ${icon('zap',11)}${bal.tots[t].STR}</span>`).join('')}
         <span>${bal.labeled}/${bal.total} players have positions</span>
       </div>
     </div>`;
@@ -1236,21 +1275,30 @@ function showCurrentTeams() {
         ${lastShuffleReasons.map(r=>`<div><strong style="color:var(--text)">${r.name}</strong> ${r.reason}</div>`).join('')}
       </div>
     </details>` : '';
-  $("teamsOut").innerHTML=`<div class="card"><div class="teams-grid">
-    <div class="team-card"><h4>Team A (${currentTeams.teamA.length})</h4><ol>${currentTeams.teamA.map(n=>`<li>${n}${tag(n)}</li>`).join("")}</ol></div>
-    <div class="team-card"><h4>Team B (${currentTeams.teamB.length})</h4><ol>${currentTeams.teamB.map(n=>`<li>${n}${tag(n)}</li>`).join("")}</ol></div>
-  </div>${balanceLine}${reasonsHtml}</div>`;
+  const letters = ['A','B','C'].filter(t => Array.isArray(currentTeams['team'+t]));
+  $("teamsOut").innerHTML=`<div class="card"><div class="teams-grid${letters.length===3?' three':''}">
+    ${letters.map(t=>`<div class="team-card"><h4>Team ${t} (${currentTeams['team'+t].length})</h4><ol>${currentTeams['team'+t].map(n=>`<li>${n}${tag(n)}</li>`).join("")}</ol></div>`).join('')}
+  </div>${letters.length===3?`<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Round robin — each pair of teams plays each other; log mini-match scores after locking</div>`:''}${balanceLine}${reasonsHtml}</div>`;
   $("reroll").hidden=false;
   $("reroll").innerHTML = rerollCount>0
     ? `Re-roll <span style="background:var(--surface);border-radius:10px;padding:1px 7px;font-size:10px;margin-left:3px;font-weight:700">${rerollCount}</span>`
     : "Re-roll";
   $("lockBar").style.display="";
 }
+let teamMode = 2;
+function setTeamMode(n) {
+  teamMode = n;
+  $('tm-2').style.background = n===2 ? 'var(--surface3)' : 'transparent';
+  $('tm-2').style.color      = n===2 ? 'var(--text)'     : 'var(--muted)';
+  $('tm-3').style.background = n===3 ? 'var(--surface3)' : 'transparent';
+  $('tm-3').style.color      = n===3 ? 'var(--text)'     : 'var(--muted)';
+}
+
 function renderTeams(isReroll=false) {
   if (isReroll) rerollCount++; else rerollCount=0;
   const names=getLockedNames();
   if (names.length<2) { $("teamsOut").innerHTML=""; $("reroll").hidden=true; $("lockBar").style.display="none"; currentTeams=null; return; }
-  currentTeams = balancedShuffle(names);
+  currentTeams = balancedShuffle(names, teamMode===3 && names.length>=3 ? 3 : 2);
   localStorage.setItem(LS_TEAMS, JSON.stringify(currentTeams));
   showCurrentTeams();
   saveDraft(); // share this roll with every device
@@ -1263,6 +1311,11 @@ function buildTeamsText() {
   currentTeams.teamA.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
   lines.push("",`Team B (${currentTeams.teamB.length}):`);
   currentTeams.teamB.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
+  if (currentTeams.teamC) {
+    lines.push("",`Team C (${currentTeams.teamC.length}):`);
+    currentTeams.teamC.forEach((n,i)=>lines.push(`  ${i+1}. ${n}`));
+    lines.push("","⚔️ Round robin — every team plays every team!");
+  }
   const bal = computeBalance(currentTeams);
   if (bal.score !== null) lines.push("", `⚖️ Balance: ${bal.score}% — ${balanceVerdict(bal.score).label}`);
   lines.push("", appUrl('teams'));
@@ -1327,7 +1380,9 @@ $("lockBtn").addEventListener("click", () => {
   if (!currentTeams) return;
   const date=$("date").value||todayET();
   const games=getGames();
-  games.unshift({id:uid(),date,teamA:[...currentTeams.teamA],teamB:[...currentTeams.teamB],result:null});
+  const game={id:uid(),date,teamA:[...currentTeams.teamA],teamB:[...currentTeams.teamB],result:null};
+  if (currentTeams.teamC) { game.teamC=[...currentTeams.teamC]; game.mode='rr'; }
+  games.unshift(game);
   saveGames(games);
   unlockList(); // reset Teams tab back to blank
   switchTab("stats");
@@ -1419,21 +1474,82 @@ function getFilteredPlayed(played) {
   });
 }
 
+// Format possibly-fractional stat numbers (RR goals count 0.5 each)
+const fmtNum = n => { const r = Math.round(n*10)/10; return Number.isInteger(r) ? String(r) : r.toFixed(1); };
+
+// Round-robin standings from mini-matches: 3/1/0 within the session, ranked by pts → GD → GF
+function rrStandings(g) {
+  if (g.mode !== 'rr' || !g.result?.matches?.length) return null;
+  const T = {};
+  gameTeamLetters(g).forEach(t => T[t] = { t, pl:0, w:0, d:0, l:0, gf:0, ga:0, pts:0 });
+  for (const m of g.result.matches) {
+    const h = T[m.h], a = T[m.a];
+    if (!h || !a) continue;
+    const sh = m.sh|0, sa = m.sa|0;
+    h.pl++; a.pl++; h.gf += sh; h.ga += sa; a.gf += sa; a.ga += sh;
+    if (sh > sa)      { h.w++; h.pts += 3; a.l++; }
+    else if (sa > sh) { a.w++; a.pts += 3; h.l++; }
+    else              { h.d++; a.d++; h.pts++; a.pts++; }
+  }
+  return Object.values(T).map(r => ({ ...r, gd: r.gf - r.ga }))
+    .sort((x,y) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf);
+}
+
+// Season-level outcome of one played session.
+// Normal game: W/D/L from the score, weight 1.
+// Round robin: whole night = ONE game — standings winner gets W, middle D, last L; goals weigh 0.5.
+function sessionOutcomes(g) {
+  if (g.mode === 'rr') {
+    const st = rrStandings(g);
+    if (!st) return null;
+    const outcomes = {};
+    for (const row of st) {
+      const better = st.filter(o => o.pts > row.pts || (o.pts === row.pts && (o.gd > row.gd || (o.gd === row.gd && o.gf > row.gf)))).length;
+      const worse  = st.filter(o => o.pts < row.pts || (o.pts === row.pts && (o.gd < row.gd || (o.gd === row.gd && o.gf < row.gf)))).length;
+      outcomes[row.t] = (better === 0 && worse > 0) ? 'W' : (worse === 0 && better > 0) ? 'L' : 'D';
+    }
+    return { outcomes, weight: 0.5, label: st.map(r => `${r.t} ${r.pts}`).join(' · ') };
+  }
+  if (!g.result) return null;
+  const evA = (g.result.goals||[]).filter(ev => ev.team === 'A').length;
+  const evB = (g.result.goals||[]).filter(ev => ev.team === 'B').length;
+  const sA = g.result.scoreA ?? (evA||evB ? evA : 0);
+  const sB = g.result.scoreB ?? (evA||evB ? evB : 0);
+  return {
+    outcomes: { A: sA>sB?'W':sA<sB?'L':'D', B: sB>sA?'W':sB<sA?'L':'D' },
+    weight: 1, score: [sA, sB], label: `${sA}–${sB}`,
+  };
+}
+
 function gameCard(g) {
   const played = g.result !== null;
-  const sA = g.result?.scoreA, sB = g.result?.scoreB;
-  const aWin = played && sA > sB, bWin = played && sB > sA;
-  const center = played
-    ? `<div class="sb-score">${sA ?? 0}<span class="sep">–</span>${sB ?? 0}</div>`
-    : `<div class="sb-vs">VS</div>`;
-  return `<div class="game-card" id="gc-${g.id}">
-    <div class="game-header" onclick="toggleGame('${g.id}')" style="flex-direction:column;gap:0">
-      <div class="sb-grid">
+  let grid;
+  if (g.mode === 'rr') {
+    const st = rrStandings(g);
+    const center = st
+      ? `<div class="sb-score" style="font-size:15px;letter-spacing:.5px">${st.map(r=>`${r.t}&hairsp;${r.pts}`).join('<span class="sep"> · </span>')}</div>`
+      : `<div class="sb-vs">RR</div>`;
+    grid = `<div class="sb-grid">
+        <div class="sb-team${st ? ' win' : ''}">${st ? 'Team '+st[0].t+' leads' : '3 teams'}</div>
+        ${center}
+        <div class="sb-team">${(g.result?.matches?.length||0)} matches</div>
+      </div>`;
+  } else {
+    const sA = g.result?.scoreA, sB = g.result?.scoreB;
+    const aWin = played && sA > sB, bWin = played && sB > sA;
+    const center = played
+      ? `<div class="sb-score">${sA ?? 0}<span class="sep">–</span>${sB ?? 0}</div>`
+      : `<div class="sb-vs">VS</div>`;
+    grid = `<div class="sb-grid">
         <div class="sb-team${aWin ? ' win' : ''}">Team A</div>
         ${center}
         <div class="sb-team${bWin ? ' win' : ''}">Team B</div>
-      </div>
-      <div class="sb-meta">${icon('calendar')} ${fmtDate(g.date)}</div>
+      </div>`;
+  }
+  return `<div class="game-card" id="gc-${g.id}">
+    <div class="game-header" onclick="toggleGame('${g.id}')" style="flex-direction:column;gap:0">
+      ${grid}
+      <div class="sb-meta">${icon('calendar')} ${fmtDate(g.date)}${g.mode==='rr'?' · round robin':''}</div>
     </div>
     <div class="game-body" id="gb-${g.id}">${renderGameBody(g)}</div>
   </div>`;
@@ -1467,35 +1583,35 @@ function renderStats() {
   const ensure = k => { if(k&&!stats[k]) stats[k]={goals:0,assists:0,wins:0,draws:0,losses:0}; };
 
   for (const g of played) {
-    // Normalise rosters — same player, any casing → same key
-    const teamA = [...new Set(g.teamA.map(p=>{ const k=nk(p); reg(k,p); return k; }).filter(Boolean))];
-    const teamB = [...new Set(g.teamB.map(p=>{ const k=nk(p); reg(k,p); return k; }).filter(Boolean))];
-    const teamASet = new Set(teamA), teamBSet = new Set(teamB);
-    const allPlayers = [...new Set([...teamA,...teamB])];
+    const so = sessionOutcomes(g);
+    if (!so) continue; // e.g. RR session with no mini-matches logged yet
 
-    // Outcome: saved score is source of truth; fall back to goal-event count
-    const evA = (g.result.goals||[]).filter(ev=>ev.team==="A").length;
-    const evB = (g.result.goals||[]).filter(ev=>ev.team==="B").length;
-    const sA  = g.result.scoreA ?? (evA||evB ? evA : 0);
-    const sB  = g.result.scoreB ?? (evA||evB ? evB : 0);
-    const outcome = sA>sB?"A":sB>sA?"B":"draw";
+    // Normalise rosters per team letter — same player, any casing → same key
+    const sets = {};
+    const allPlayers = new Set();
+    for (const t of gameTeamLetters(g)) {
+      const keys = [...new Set((g['team'+t]||[]).map(p=>{ const k=nk(p); reg(k,p); return k; }).filter(Boolean))];
+      sets[t] = new Set(keys);
+      keys.forEach(k => allPlayers.add(k));
+    }
 
     allPlayers.forEach(k=>{
       ensure(k);
-      if (outcome==="draw")                    stats[k].draws++;
-      else if (outcome==="A"&&teamASet.has(k)) stats[k].wins++;
-      else if (outcome==="A"&&teamBSet.has(k)) stats[k].losses++;
-      else if (outcome==="B"&&teamBSet.has(k)) stats[k].wins++;
-      else if (outcome==="B"&&teamASet.has(k)) stats[k].losses++;
+      const t = Object.keys(sets).find(t => sets[t].has(k));
+      const r = t && so.outcomes[t];
+      if (r==='W') stats[k].wins++;
+      else if (r==='D') stats[k].draws++;
+      else if (r==='L') stats[k].losses++;
     });
 
     // Own goals (og:true) do NOT count toward the scorer's goal tally; assists still count.
+    // Round-robin goals/assists weigh 0.5 each.
     (g.result.goals||[]).forEach(ev=>{
       if (!ev.og) {
         const k=nk(ev.player);
-        if (k) { reg(k,ev.player); ensure(k); stats[k].goals++; }
+        if (k) { reg(k,ev.player); ensure(k); stats[k].goals += so.weight; }
       }
-      if (ev.assist){ const ak=nk(ev.assist); if(ak){reg(ak,ev.assist);ensure(ak);stats[ak].assists++;} }
+      if (ev.assist){ const ak=nk(ev.assist); if(ak){reg(ak,ev.assist);ensure(ak);stats[ak].assists += so.weight;} }
     });
   }
 
@@ -1525,13 +1641,13 @@ function renderStats() {
   }
 
   $("statGames").textContent = played.length;
-  $("statGoals").textContent = played.reduce((s,g)=>(g.result?.goals?.length||0)+s, 0);
+  $("statGoals").textContent = fmtNum(played.reduce((s,g)=>(g.result?.goals?.length||0)*(g.mode==='rr'?0.5:1)+s, 0));
 
   const rankBadge=i=> i===0?`<div class="lb-rank" style="color:#fbbf24">1</div>`
                     : i===1?`<div class="lb-rank" style="color:#cbd5e1">2</div>`
                     : i===2?`<div class="lb-rank" style="color:#e08a3c">3</div>`
                     : `<div class="lb-rank">${i+1}</div>`;
-  const lbRow=([name,s],i,key)=>`<div class="lb-row">${rankBadge(i)}<div class="lb-ava" style="${avaStyle(name)}">${initials(name)}</div><div class="lb-name" onclick="openProfile('${encodeURIComponent(name)}')">${name}</div><div class="lb-val">${s[key]}</div></div>`;
+  const lbRow=([name,s],i,key)=>`<div class="lb-row">${rankBadge(i)}<div class="lb-ava" style="${avaStyle(name)}">${initials(name)}</div><div class="lb-name" onclick="openProfile('${encodeURIComponent(name)}')">${name}</div><div class="lb-val">${fmtNum(s[key])}</div></div>`;
   $("lbGoals").innerHTML=[...entries].filter(([,s])=>s.goals>0).sort((a,b)=>b[1].goals-a[1].goals).map((e,i)=>lbRow(e,i,"goals")).join("")||`<p style="color:var(--muted);font-size:13px">No goals yet.</p>`;
   $("lbAssists").innerHTML=[...entries].filter(([,s])=>s.assists>0).sort((a,b)=>b[1].assists-a[1].assists).map((e,i)=>lbRow(e,i,"assists")).join("")||`<p style="color:var(--muted);font-size:13px">No assists yet.</p>`;
   $("lbWins").innerHTML=[...entries]
@@ -1548,7 +1664,7 @@ function renderStats() {
         <div class="lb-ava" style="${avaStyle(name)}">${initials(name)}</div>
         <div class="lb-name" onclick="openProfile('${encodeURIComponent(name)}')">${name}</div>
         <div class="lb-val" style="white-space:nowrap">${pts}<span style="font-size:11px;font-weight:500;color:var(--muted);margin-left:2px">pts</span></div>
-        <div style="width:100%;padding-left:72px;font-size:11px;color:var(--muted)">${gp}GP · ${s.wins}W · ${s.draws}D · ${s.losses}L · <span style="color:var(--text);font-weight:600">${ga}</span> G+A</div>
+        <div style="width:100%;padding-left:72px;font-size:11px;color:var(--muted)">${gp}GP · ${s.wins}W · ${s.draws}D · ${s.losses}L · <span style="color:var(--text);font-weight:600">${fmtNum(ga)}</span> G+A</div>
       </div>`;
     }).join("")||`<p style="color:var(--muted);font-size:13px">No results yet.</p>`;
   openIds.forEach(id=>{ const el=$('gb-'+id); if(el) el.classList.add('open'); });
@@ -1556,7 +1672,8 @@ function renderStats() {
 }
 
 function renderGameBody(g) {
-  const all=[...g.teamA,...g.teamB];
+  const letters=gameTeamLetters(g);
+  const all=letters.flatMap(t=>g['team'+t]);
   const opts=all.map(p=>`<option value="${p}">${p}</option>`).join("");
   const goalsHtml=(g.result?.goals||[]).map((ev,i)=>`
     <div id="goal-row-${g.id}-${i}" style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:13px;border-bottom:1px solid var(--border)">
@@ -1574,35 +1691,28 @@ function renderGameBody(g) {
     </div>
     <div class="lbl">Teams <span style="font-weight:400;color:var(--muted);font-size:11px;text-transform:none;letter-spacing:0">— drag to swap</span></div>
     <div class="row game-teams-row" style="margin-bottom:14px;font-size:13px">
-      <div>
-        <div style="color:var(--muted);margin-bottom:6px">Team A</div>
-        <div id="sort-A-${g.id}" data-game="${g.id}" data-team="A"
+      ${letters.map(t=>`<div>
+        <div style="color:var(--muted);margin-bottom:6px">Team ${t}</div>
+        <div id="sort-${t}-${g.id}" data-game="${g.id}" data-team="${t}"
           style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamA.map(p=>`<span class="badge badge-green" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px" onclick="openPlayerModal('${g.id}','A','${p.replace(/'/g,"\\'")}')">${p} <span style="opacity:.5">${icon('pencil',10)}</span></span>`).join("")}
+          ${g['team'+t].map(p=>`<span class="badge ${TEAM_BADGE[t]}" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px" onclick="openPlayerModal('${g.id}','${t}','${p.replace(/'/g,"\\'")}')">${p} <span style="opacity:.5">${icon('pencil',10)}</span></span>`).join("")}
         </div>
-        <div style="display:flex;gap:6px"><input id="addA-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','A')">+</button></div>
-      </div>
-      <div>
-        <div style="color:var(--muted);margin-bottom:6px">Team B</div>
-        <div id="sort-B-${g.id}" data-game="${g.id}" data-team="B"
-          style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;padding:4px;border-radius:8px;border:1px dashed var(--border);margin-bottom:8px">
-          ${g.teamB.map(p=>`<span class="badge badge-yellow" data-player="${p}" style="cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px" onclick="openPlayerModal('${g.id}','B','${p.replace(/'/g,"\\'")}')">${p} <span style="opacity:.5">${icon('pencil',10)}</span></span>`).join("")}
-        </div>
-        <div style="display:flex;gap:6px"><input id="addB-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','B')">+</button></div>
-      </div>
+        <div style="display:flex;gap:6px"><input id="add${t}-${g.id}" placeholder="Add player…" style="font-size:12px;padding:6px 8px"/><button class="btn btn-ghost btn-sm" onclick="addPlayer('${g.id}','${t}')">+</button></div>
+      </div>`).join('')}
     </div>
+    ${g.mode==='rr' ? rrSection(g) : `
     <div class="lbl">Score <span class="tag">${icon('lock',10)} admin</span></div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
       <input type="number" min="0" id="scoreA-${g.id}" value="${g.result?.scoreA??""}" placeholder="A" style="width:64px;text-align:center;font-size:20px;font-weight:700"/>
       <span style="color:var(--muted);font-size:18px">–</span>
       <input type="number" min="0" id="scoreB-${g.id}" value="${g.result?.scoreB??""}" placeholder="B" style="width:64px;text-align:center;font-size:20px;font-weight:700"/>
       <button class="btn btn-ghost btn-sm" onclick="saveScore('${g.id}')">Save</button>
-    </div>
+    </div>`}
     <div class="lbl">Goals & assists <span class="tag">${icon('lock',10)} admin</span></div>
     <div style="margin-bottom:10px">${goalsHtml}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
       <select id="gPlayer-${g.id}" style="flex:2;font-size:13px;padding:7px"><option value="">Scorer…</option>${opts}</select>
-      <select id="gTeam-${g.id}" style="font-size:13px;padding:7px"><option value="A">Team A</option><option value="B">Team B</option></select>
+      <select id="gTeam-${g.id}" style="font-size:13px;padding:7px">${letters.map(t=>`<option value="${t}">Team ${t}</option>`).join('')}</select>
       <select id="gAssist-${g.id}" style="flex:2;font-size:13px;padding:7px"><option value="">Assist — none</option>${opts}</select>
       <button class="btn btn-ghost btn-sm" onclick="addGoal('${g.id}')">+ Goal</button>
     </div>
@@ -1614,6 +1724,58 @@ function renderGameBody(g) {
       <button class="btn btn-ghost btn-sm btn-danger" onclick="deleteGame('${g.id}')">Delete</button>
     </div>
   </div>`;
+}
+
+// Round-robin section inside a game card: standings + mini-match log + quick add
+function rrSection(g) {
+  const st = rrStandings(g);
+  const standingsHtml = st ? `
+    <table class="rr-table">
+      <tr><th style="text-align:left">Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>Pts</th></tr>
+      ${st.map((r,i)=>`<tr${i===0?' style="color:var(--green2);font-weight:700"':''}><td style="text-align:left">Team ${r.t}</td><td>${r.pl}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}</td><td>${r.ga}</td><td style="font-weight:700">${r.pts}</td></tr>`).join('')}
+    </table>` : '';
+  const matchesHtml = (g.result?.matches||[]).map((m,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;border-bottom:1px solid var(--border)">
+      <span><strong>${m.h}</strong> <span style="color:var(--muted);font-weight:700">${m.sh} – ${m.sa}</span> <strong>${m.a}</strong></span>
+      <button onclick="removeMatch('${g.id}',${i})" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;line-height:1">✕</button>
+    </div>`).join('') || `<p style="color:var(--muted);font-size:13px;padding:4px 0">No mini-matches logged yet.</p>`;
+  const letters = gameTeamLetters(g);
+  const teamOpts = sel => letters.map(t=>`<option value="${t}" ${t===sel?'selected':''}>${t}</option>`).join('');
+  return `
+    <div class="lbl">Standings</div>
+    ${standingsHtml || `<p style="color:var(--muted);font-size:13px;padding:2px 0 10px">Log mini-matches below — standings build automatically. Top team gets the W for the night.</p>`}
+    <div class="lbl" style="margin-top:12px">Mini-matches <span class="tag">${icon('lock',10)} admin</span></div>
+    <div style="margin-bottom:8px">${matchesHtml}</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <select id="mh-${g.id}" style="width:62px;font-size:14px;padding:7px">${teamOpts('A')}</select>
+      <input type="number" min="0" id="msh-${g.id}" placeholder="0" style="width:56px;text-align:center;font-size:16px;font-weight:700"/>
+      <span style="color:var(--muted)">–</span>
+      <input type="number" min="0" id="msa-${g.id}" placeholder="0" style="width:56px;text-align:center;font-size:16px;font-weight:700"/>
+      <select id="ma-${g.id}" style="width:62px;font-size:14px;padding:7px">${teamOpts('B')}</select>
+      <button class="btn btn-ghost btn-sm" onclick="addMatch('${g.id}')">+ Match</button>
+    </div>`;
+}
+
+function addMatch(id) {
+  requireAdmin(() => {
+    const h=$(`mh-${id}`).value, a=$(`ma-${id}`).value;
+    const sh=parseInt($(`msh-${id}`).value,10), sa=parseInt($(`msa-${id}`).value,10);
+    if (h===a) { alert("A team can't play itself — pick two different teams."); return; }
+    if (isNaN(sh)||isNaN(sa)) return;
+    const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
+    if (!g.result) g.result={matches:[],goals:[]};
+    if (!g.result.matches) g.result.matches=[];
+    g.result.matches.push({h,a,sh,sa});
+    saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+  });
+}
+function removeMatch(id, idx) {
+  requireAdmin(() => {
+    const games=getGames(), g=games.find(x=>x.id===id);
+    if (!g?.result?.matches) return;
+    g.result.matches.splice(idx,1);
+    saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
+  });
 }
 
 function toggleGame(id) {
@@ -1638,16 +1800,19 @@ function initSortables() {
   });
 }
 
+const TEAM_BADGE = { A:'badge-green', B:'badge-yellow', C:'badge-blue' };
+function gameTeamLetters(g) { return ['A','B','C'].filter(t => Array.isArray(g['team'+t])); }
+
 function saveTeamOrder(gameId) {
   const games = getGames(), g = games.find(x => x.id === gameId);
   if (!g) return;
-  const elA = $(`sort-A-${gameId}`), elB = $(`sort-B-${gameId}`);
-  if (!elA || !elB) return;
-  g.teamA = [...elA.querySelectorAll('[data-player]')].map(e => e.dataset.player);
-  g.teamB = [...elB.querySelectorAll('[data-player]')].map(e => e.dataset.player);
-  // Re-colour badges to match their new team
-  elA.querySelectorAll('[data-player]').forEach(e => { e.className='badge badge-green'; e.style.cssText='cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px'; });
-  elB.querySelectorAll('[data-player]').forEach(e => { e.className='badge badge-yellow'; e.style.cssText='cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px'; });
+  for (const t of gameTeamLetters(g)) {
+    const el = $(`sort-${t}-${gameId}`);
+    if (!el) return;
+    g['team'+t] = [...el.querySelectorAll('[data-player]')].map(e => e.dataset.player);
+    // Re-colour badges to match their new team
+    el.querySelectorAll('[data-player]').forEach(e => { e.className=`badge ${TEAM_BADGE[t]}`; e.style.cssText='cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:3px'; });
+  }
   saveGames(games);
 }
 
@@ -1662,10 +1827,10 @@ function saveScore(id) {
   });
 }
 
-// Returns true if `player` belongs to the team NOT credited with the goal.
+// Returns true if `player` belongs to a roster OTHER than the team credited with the goal.
 function isOwnGoal(g, player, team) {
-  return (team === 'A' && g.teamB.includes(player)) ||
-         (team === 'B' && g.teamA.includes(player));
+  const on = t => (g['team'+t]||[]).includes(player);
+  return !on(team) && (on('A') || on('B') || on('C'));
 }
 
 function addGoal(id) {
@@ -1673,7 +1838,8 @@ function addGoal(id) {
     const player=$(`gPlayer-${id}`).value, team=$(`gTeam-${id}`).value, assist=$(`gAssist-${id}`).value||null;
     if(!player) return;
     const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
-    if(!g.result) g.result={scoreA:0,scoreB:0,goals:[]};
+    if(!g.result) g.result = g.mode==='rr' ? {matches:[],goals:[]} : {scoreA:0,scoreB:0,goals:[]};
+    if(!g.result.goals) g.result.goals=[];
     const og = isOwnGoal(g, player, team);
     g.result.goals.push({player,team,assist,og});
     saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
@@ -1689,9 +1855,8 @@ function removeGoal(id,idx) {
 }
 
 function removePlayer(id, team, player) {
-  const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
-  if(team==="A") g.teamA=g.teamA.filter(p=>p!==player);
-  else g.teamB=g.teamB.filter(p=>p!==player);
+  const games=getGames(), g=games.find(x=>x.id===id); if(!g||!g['team'+team]) return;
+  g['team'+team]=g['team'+team].filter(p=>p!==player);
   saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
 }
 
@@ -1700,7 +1865,7 @@ function startEditGoal(gameId, idx) {
     const games=getGames(), g=games.find(x=>x.id===gameId);
     if (!g?.result?.goals?.[idx]) return;
     const ev=g.result.goals[idx];
-    const all=[...g.teamA,...g.teamB];
+    const all=gameTeamLetters(g).flatMap(t=>g['team'+t]);
     const opts=all.map(p=>`<option value="${p}" ${p===ev.player?'selected':''}>${p}</option>`).join('');
     const assistOpts=`<option value="" ${!ev.assist?'selected':''}>No assist</option>`+all.map(p=>`<option value="${p}" ${p===ev.assist?'selected':''}>${p}</option>`).join('');
     const sel='font-size:12px;padding:4px 6px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text)';
@@ -1708,8 +1873,7 @@ function startEditGoal(gameId, idx) {
     row.innerHTML=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:2px 0">
       <select id="eg-player-${gameId}-${idx}" style="${sel}">${opts}</select>
       <select id="eg-team-${gameId}-${idx}" style="${sel}">
-        <option value="A" ${ev.team==='A'?'selected':''}>Team A</option>
-        <option value="B" ${ev.team==='B'?'selected':''}>Team B</option>
+        ${gameTeamLetters(g).map(t=>`<option value="${t}" ${ev.team===t?'selected':''}>Team ${t}</option>`).join('')}
       </select>
       <select id="eg-assist-${gameId}-${idx}" style="${sel}">${assistOpts}</select>
       <button onclick="saveEditGoal('${gameId}',${idx})" class="btn btn-ghost btn-sm">✓ Save</button>
@@ -1748,7 +1912,7 @@ function savePlayerModal() {
   closePlayerModal();
   if (!newName || newName === oldName) return;
   const games = getGames(), g = games.find(x => x.id === gameId); if (!g) return;
-  const arr = team === 'A' ? g.teamA : g.teamB;
+  const arr = g['team'+team] || [];
   const i = arr.indexOf(oldName); if (i !== -1) arr[i] = newName;
   (g.result?.goals || []).forEach(ev => {
     if (ev.player === oldName) ev.player = newName;
@@ -1769,8 +1933,8 @@ function editPlayerName(id, team, oldName) { openPlayerModal(id, team, oldName);
 
 function addPlayer(id,team) {
   const inp=$(`add${team}-${id}`), name=inp.value.trim(); if(!name) return;
-  const games=getGames(), g=games.find(x=>x.id===id); if(!g) return;
-  if(team==="A") g.teamA.push(name); else g.teamB.push(name);
+  const games=getGames(), g=games.find(x=>x.id===id); if(!g||!g['team'+team]) return;
+  g['team'+team].push(name);
   inp.value=""; saveGames(games); renderStats(); $(`gb-${id}`).classList.add("open");
 }
 
@@ -1794,8 +1958,23 @@ function deleteGame(id) {
 function shareGame(id) {
   const g=getGames().find(x=>x.id===id); if(!g) return;
   const lines=[`⚽ Sports Day — ${fmtDate(g.date)}`];
-  if(g.result) lines.push(`Final: Team A ${g.result.scoreA} – ${g.result.scoreB} Team B`);
-  lines.push("",`Team A: ${g.teamA.join(", ")}`,`Team B: ${g.teamB.join(", ")}`);
+  if (g.mode==='rr') {
+    lines.push("⚔️ 3-team round robin");
+    const st=rrStandings(g);
+    if (st) {
+      lines.push("","Standings:");
+      st.forEach((r,i)=>lines.push(`  ${i+1}. Team ${r.t} — ${r.pts} pts (${r.w}W ${r.d}D ${r.l}L, ${r.gf}-${r.ga})`));
+    }
+    if (g.result?.matches?.length) {
+      lines.push("","Matches:");
+      g.result.matches.forEach(m=>lines.push(`  ${m.h} ${m.sh} – ${m.sa} ${m.a}`));
+    }
+    lines.push("");
+    gameTeamLetters(g).forEach(t=>lines.push(`Team ${t}: ${g['team'+t].join(", ")}`));
+  } else {
+    if(g.result) lines.push(`Final: Team A ${g.result.scoreA} – ${g.result.scoreB} Team B`);
+    lines.push("",`Team A: ${g.teamA.join(", ")}`,`Team B: ${g.teamB.join(", ")}`);
+  }
   if(g.result?.goals?.length) {
     lines.push("","Goals:");
     g.result.goals.forEach(ev=>lines.push(`  ⚽ ${ev.player} (Team ${ev.team}${ev.og?' — OG':''})${ev.assist?` 🎯 ${ev.assist}`:""}`));
@@ -1917,6 +2096,86 @@ async function renderFixtures() {
   }).join('');
 }
 
+// ── PHOTOS ───────────────────────────────────────────────────
+let photosCache = [];
+
+function openLightbox(url) { $('lightboxImg').src = url; $('lightbox').style.display = 'flex'; }
+
+async function renderPhotos() {
+  if (!$('photoDate').value) $('photoDate').value = todayET();
+  const el = $('photoTimeline');
+  const { data, error } = await sb.from('photos').select('*').order('date', { ascending: false });
+  if (error) { el.innerHTML = emptyState('info', 'Photos not set up yet', 'The photos table/bucket needs to be created in Supabase'); return; }
+  photosCache = data || [];
+  if (!photosCache.length) { el.innerHTML = emptyState('camera', 'No photos yet', 'Upload the first team photo above'); return; }
+
+  const byDate = {};
+  photosCache.forEach(p => { (byDate[p.date] = byDate[p.date] || []).push(p); });
+  el.innerHTML = Object.entries(byDate).sort((a,b) => b[0].localeCompare(a[0])).map(([date, ps]) => {
+    const game = (gamesCache||[]).find(g => g.date === date && g.result);
+    const sub = game
+      ? (game.mode === 'rr'
+          ? `Round robin — ${rrStandings(game) ? 'Team ' + rrStandings(game)[0].t + ' won the night' : ''}`
+          : `Team A ${game.result.scoreA ?? '–'}–${game.result.scoreB ?? '–'} Team B`)
+      : '';
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;gap:8px">
+        <div class="lbl" style="margin:0">${icon('calendar')}${fmtDate(date)}</div>
+        ${sub ? `<div style="font-size:11px;color:var(--muted);text-align:right">${sub}</div>` : ''}
+      </div>
+      <div class="photo-grid">${ps.map(p => `<img class="photo-thumb" loading="lazy" src="${p.url}" onclick="openLightbox('${p.url}')" />`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+// Resize + JPEG-compress client-side so uploads stay ~150-300 KB
+function compressImage(file) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 1400;
+      let { width: w, height: h } = img;
+      if (Math.max(w, h) > max) { const r = max / Math.max(w, h); w = Math.round(w*r); h = Math.round(h*r); }
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      c.toBlob(b => b ? res(b) : rej(new Error('compress failed')), 'image/jpeg', .82);
+    };
+    img.onerror = rej;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function uploadPhotos(files) {
+  if (!files?.length) return;
+  const date = $('photoDate').value || todayET();
+  const st = $('photoStatus'); st.style.display = '';
+  let done = 0;
+  for (const f of files) {
+    st.textContent = `Uploading ${done+1}/${files.length}…`;
+    try {
+      const blob = await compressImage(f);
+      const path = `${date}/${uid()}.jpg`;
+      const { error: ue } = await sb.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg' });
+      if (ue) throw ue;
+      const url = `${SUPABASE_URL}/storage/v1/object/public/photos/${path}`;
+      const { error: ie } = await sb.from('photos').insert({ id: uid(), date, url });
+      if (ie) throw ie;
+      done++;
+    } catch (e) {
+      console.warn('photo upload failed', e);
+      st.textContent = 'Upload failed — check the photos setup in Supabase.';
+      setTimeout(() => st.style.display = 'none', 4000);
+      $('photoFile').value = '';
+      renderPhotos();
+      return;
+    }
+  }
+  st.textContent = `Uploaded ${done} photo${done>1?'s':''} ✓`;
+  setTimeout(() => st.style.display = 'none', 2500);
+  $('photoFile').value = '';
+  renderPhotos();
+}
+
 // ── SUPABASE SYNC ─────────────────────────────────────────────
 let _draftFromLoad = null;   // shared draft fetched during load; null = Supabase unreachable
 
@@ -1955,8 +2214,7 @@ async function loadFromSupabase() {
       let touched = false;
       g.result.goals.forEach(ev => {
         if (ev.og === undefined) {
-          ev.og = (ev.team==='A' && (g.teamB||[]).includes(ev.player)) ||
-                  (ev.team==='B' && (g.teamA||[]).includes(ev.player));
+          ev.og = isOwnGoal(g, ev.player, ev.team);
           touched = true;
         }
       });
@@ -1989,6 +2247,9 @@ function setupRealtime() {
       if (pData) { try { positions = JSON.parse(pData.value) || {}; } catch {} }
       applyDraft(dData ? (dData.value || '') : '');
       if ($('tab-squad')?.classList.contains('active')) renderSquad();
+    })
+    .on('postgres_changes', { event:'*', schema:'public', table:'photos' }, () => {
+      if ($('tab-photos')?.classList.contains('active')) renderPhotos();
     })
     .subscribe();
 }
